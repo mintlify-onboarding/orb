@@ -1,0 +1,41 @@
+{
+    "name": "Orb",
+    "logo": {
+      "light": "/logo/light.png",
+      "dark": "/logo/dark.png"
+    },
+    "favicon": "/favicon.png",
+    "colors": {
+      "primary": "#7e57e8",
+      "light": "#9A75FF",
+      "dark": "#7e57e8"
+    },
+    "topbarCtaButton": {
+      "name": "",
+      "url": ""
+    },
+    "topbarLinks": [
+      {
+        "name": "",
+        "url": ""
+      }
+    ],
+    "anchors": [
+      {
+        "name": "",
+        "icon": "",
+        "url": ""
+      }
+    ],
+    "navigation": [
+      {
+        "group": "",
+        "pages": [""]
+      }
+    ],
+    "footerSocials":
+      {
+          "twitter": "",
+          "linkedin": ""
+      }
+  }
