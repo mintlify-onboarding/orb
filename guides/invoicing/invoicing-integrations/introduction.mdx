@@ -1,0 +1,22 @@
+---
+title: "Invoicing via external integration"
+---
+
+In addition to Orb's native invoicing functionality, Orb also supports integrating with external invoicing providers. Customers of Orb use invoicing integrations to support their transition to Orb's invoices, or to maintain invoicing relationships with customers that expect invoice delivery through an existing system. Using a system for invoicing that is also your ERP (e.g. NetSuite) allows you to run reporting and other analysis with the synced data in addition to managing invoice delivery.
+
+This invoicing process syncs each line item on the invoice individually, attaches the appropriate product from the external provider, and links it to a customer in your invoicing provider instance. Invoicing via an external provider can be enabled for one or all of your customers, and different customers can be invoiced via different providers. Orb currently has integrations with:
+
+1. Stripe Invoicing
+2. QuickBooks
+3. Bill.com
+4. NetSuite
+
+If your preferred invoicing provider is not on the list, please reach out!
+
+For each of the supported providers, Orb offers a one-way sync that exports invoices when they're issued. After invoices are synced to the external provider, all future invoicing actions should be taken in the provider (ex. issuing a credit note), and any updates made to invoices in the provider will not be reflected in Orb. 
+
+The invoicing provider is responsible for issuing the invoice to the end customer; no Orb emails will be sent, and payment will not be collected through Orb.
+
+Each integration has a few specific steps, but generally the flow looks like: Authorizing the initial connection via OAuth or API keys. This can be configured from the Orb dashboard under Settings > Connections. Mapping items in Orb to items in the external provider This ensures that invoices are linked to sellable items in your external provider, and any tax/accounting treatment is correctly applied Creating customers in Orb with the correct `payment_provider` and `payment_provider_id` set
+
+Orb also offers an accounting integration with QuickBooks and NetSuite, while still delivering invoices through Orb. For more information on that flow, click [here](/guides/integrations-and-exports/accounting).

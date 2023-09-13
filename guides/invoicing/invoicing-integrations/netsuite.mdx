@@ -1,0 +1,58 @@
+---
+title: "Invoicing with NetSuite"
+---
+
+## Prerequisites[](#prerequisites "Direct link to heading")
+
+1. NetSuite account
+2. Sufficient administrator settings in your NetSuite instance to install bundles and enable SuiteCloud features
+
+## Connecting NetSuite with Orb[](#connecting-netsuite-with-orb "Direct link to heading")
+
+1. In the Orb dashboard, click the dropdown menu on the bottom left and navigate to Organization settings, navigate to the “Connections” tab of the modal, and select Connect to NetSuite
+2. Follow the instructions to connect NetSuite:  
+   1. Install the AccountLink NetSuite Bundle, and the AccountLink: Rev Rec Columns Bundle  
+   * Note: You need to install both bundles for revenue recognition data to work  
+   1. Enable SuiteCloud features as listed  
+   2. Confirm setup  
+   3. Upon clicking Save, you should now see NetSuite as a connection at the top of the Connections tab with status “Sync in progress”
+
+Once existing data from NetSuite is synced and ready to be used by Orb, the status of the connection will show up as “Active”. Until then, the connection cannot be used in Orb.
+
+While setting up customers and items in NetSuite, if data is missing in Orb, click the “Refresh” button to resync data from NetSuite. Orb also periodically updates data from NetSuite.
+
+### Setting up RevRec schedules[](#setting-up-revrec-schedules "Direct link to heading")
+
+Orb syncs line item service periods so you can perform accurate revenue recognition in NetSuite. To enable this:
+
+1. In NetSuite, navigate to the Revenue Field Mapper
+2. Map Rev Rec Start Date and Rev Rec End Date to Start Date and End Date respectively
+
+![image.png](/images/guides/invoicing/invoicing-integrations/netsuite-rev-rec-field-mapping-fa48ef2151a1dc82f3d600f6c55ba555.png)
+
+1. Navigate to Revenue Recognition Rule, and create a new rule  
+   1. Specify the Rev Rec Start Date Source and Rev Rec End Date Source to the data that we mapped in the previous step
+
+![image.png](/images/guides/invoicing/invoicing-integrations/netsuite-rev-rec-rule-630fd6563fe5d0bd2ef5da3bcc4ec1b2.png)
+
+## Mapping items[](#mapping-items "Direct link to heading")
+
+Mapping items to items in NetSuite is required for the integration to succeed. If you do not map items, invoices will fail to issue. In NetSuite, create items corresponding to items you are selling in Orb. When creating the item, in the Revenue Recognition/Amortization tab, select the Revenue Recognition Rule and Rev Rec Forecast Rule that you created in the above step.
+
+![image.png](/images/guides/invoicing/invoicing-integrations/netsuite-item-4c28d47688aa0c41eb8e5ac97c470a98.png)
+
+Then, navigate to the Items tab in Orb under Settings, and select a NetSuite item for each Orb item. 
+
+![image.png](/images/guides/invoicing/invoicing-integrations/netsuite-mappings-cd7f7c02e440037ef099dd1908bf3eb6.png)
+
+## Configuring customers[](#configuring-customers "Direct link to heading")
+
+When creating or updating customers in the Orb UI, select NetSuite as the Payment Provider in order to view a list of previously created customers in your NetSuite account. 
+
+Customer mappings can also be configured in the API, by passing in the customer’s NetSuite ID under `payment_provider_id`, and setting `payment_provider` to `netsuite`. The customer’s NetSuite ID can be found by navigating to the customer’s page in NetSuite, and copying the ID from the URL (e.g. `https://<>.app.netsuite.com/app/common/entity/custjob.nl?id=1613&whence=`, where `1613` is the ID)
+
+Once mappings are configured, invoices for customers with a NetSuite payment provider ID will be synced to NetSuite.
+
+## Testing NetSuite[](#testing-netsuite "Direct link to heading")
+
+While testing, connect a NetSuite sandbox account to Orb. When you are testing RevRec in a sandbox, syncing invoices does not automatically update revenue arrangements. To force update the revenue arrangement within NetSuite, in Update Revenue Arrangements and Revenue Plans, click Refresh, Update Revenue Arrangements, and then Update Revenue Plans.

@@ -1,0 +1,85 @@
+---
+title: "Test your invoicing setup"
+---
+
+Now that you've [subscribed your customer to a plan](/guides/quickstart/subscriptions), you're ready to set up your customer's invoicing experience. We always recommend first testing these workflows in Orb's dedicated test mode to ensure that you understand the side-effects of actions before you deploy them in production.
+
+Orb ships with a native, transparent invoicing that allows you to issue invoices to your customers and collect payment. Orb Invoicing integrates with Stripe payments to allow you to collect payment via credit card or ACH.
+
+## Configuring invoicing metadata[](#configuring-invoicing-metadata "Direct link to heading")
+
+The details section at the top of your invoices doesn’t look very complete yet, which can lead to a confusing experience for your customers and cause issues from a compliance perspective. Let's fix that by setting up your company details and your customer's address.
+
+![](/images/guides/quickstart/invoicing_header-e128ddd91cef9dd29331f0883ace6888.png)
+
+Set up your the customer’s company details in the [Invoice settings tab](https://app.withorb.com/settings?tab=invoices). The company details will be used when showing an invoice in the Orb invoice portal and will also be reflected when generating invoice PDFs.
+
+Let's also fill in the customer's address on the customer detail page by clicking 'Edit' next to the Addresses section.
+
+![](/images/guides/quickstart/edit_address-2504105ddc286e4f98cf578986e8e942.png)
+
+## Testing invoice email delivery[](#testing-invoice-email-delivery "Direct link to heading")
+
+Orb sends invoice emails your customers directly on your behalf, linking directly to the invoicing portal, which is an invoice's customer-facing link as opposed to the internal dashboard link you've been exploring in this quickstart. You can learn more about the invoice portal in the [invoice portal documentation](/guides/invoicing/invoice-portal), and it's accessible directly on the invoice detail page by clicking the \`Invoice portal preview' button.
+
+To test emails manually, ensure that you have a `reply-to` email address set in your account's [invoice settings](https://app.withorb.com/settings?tab=invoices) page. You can leave the "Send email notifications for all Orb invoices" off if you'd like to just test them one-off.
+
+Navigate back to your issued invoice, and click "Email Invoice" in the dropdown in the top-right action menu. This will open a confirmation dialog, and if you confirm, an email will be sent to the customer's email address.
+
+![](/images/guides/quickstart/email_confirmation-e5b47aafc9b8e3954c507739e11310db.png)
+
+The email sent will reflect the latest state of the invoice, whether that's issued, paid, or has a payment failure. The email will link directly to the invoice portal and will include, as an attachment a generated invoice PDF. We recommend you confirm that the `reply-to` email is set to your desired email address, so that any questions or concerns from your customers can be directed to the right place.
+
+![](/images/guides/quickstart/invoice_email_example-552268df16764c052091baf3da2695ad.png)
+
+If you navigate back to the Invoice settings page and update the toggle settings to automatically send emails, Orb will send an email for whenever a new invoice is issued. This will only send emails for new invoice events, so you will need to set up a subscription to issue another invoice to see that the email is automatically delivered.
+
+With emails configured, we can now set up payments so that customers can pay the invoice when they receive an email at the end of the billing period.
+
+## Configuring and testing payments[](#configuring-and-testing-payments "Direct link to heading")
+
+Orb supports Stripe as a payment provider, and you can fully test the Stripe payment flow in test mode with your Stripe test mode configuration.
+
+After ensuring you are in test mode via the toggle at the top of the page (you should see a green banner), go to the [connections tab](https://app.withorb.com/settings?tab=payment%5Fgateways) and click "Connect with Stripe" to enter the Stripe Connect OAuth flow to add your test mode account. Note that you will need to Stripe permissions to connect your account.
+
+Once Stripe is connected to your Orb account, you can connect a Stripe customer to your Orb customer by editing the customer details, and picking from an auto-populated dropdown of Stripe customers. Note that the 'Invoice Method' is still Orb Invoicing, signifying that Orb is the source of truth for the invoice and payment status, but that Orb will use the Stripe customer's default payment method to collect payment on the invoice.
+
+![](/images/guides/quickstart/payment_configuration-b5bba7933516b4e83f86d439b78f3f01.png)
+
+### Creating a test payment method[](#creating-a-test-payment-method "Direct link to heading")
+
+There are a few ways you can trigger payment on an invoice:
+
+1. Auto-collection, displayed above in customer details, will control if newly issued invoices will try to collect payment via the connected Stripe customer on the invoice’s due date. This is fully managed by Orb, and is most common for self-serve customers. For more details on payment retries and how Orb handles failed auto-collection, see the [payment behavior documentation](/guides/invoicing/payments).
+2. If auto-collection is not configured but invoice emails are configured, then Orb will issue the invoice and allow the customer to pay directly via the invoice portal. This is common for enterprise customers who may have a dedicated billing contact and pay after inspecting the invoice's charges.
+3. You can manually trigger collection an invoice via the internal Invoice detail page by clicking the "Charge now" button on an invoice with a payment gateway connected.
+
+### Testing manual payment[](#testing-manual-payment "Direct link to heading")
+
+We'll test the third option, manual payment, to ensure that the payment flow is working as expected. Navigate again to the issued internal invoice page. Below the amount due on the left side of the invoice should be a large `Charge now` button.
+
+Once the invoice is confirmed and processed, you'll see new timeline events on the invoice detail page confirming the payment method which was used and indicating when the payment was collected. The invoice status will be updated to paid.
+
+![](/images/guides/quickstart/paid_invoice-46d783ca70bbd9e7300797a6f5002ad3.png)
+
+## Manual invoice review[](#manual-invoice-review "Direct link to heading")
+
+Once you've tested your invoicing flow in test mode, you're ready to start using invoicing for real customers in live mode. However, you might want to manually review and adjust invoices at first before sending them to customers to ensure everything is set up corrrectly.
+
+We'll turn on manual invoice review in our test mode account first to understand the workflow. You can find this setting in the [Invoice settings tab](https://app.withorb.com/settings?tab=invoices).
+
+![](/images/guides/quickstart/manual_invoice_review_setting-d4bf99df0905531f4eb6628f0c4afc9a.png)
+
+Now, let's create another customer with the same subscription configuration as the one we [set up before](/guides/quickstart/subscriptions). If you look at that customer's invoice history, you'll see that instead of having an issued invoice, this customer will instead have an invoice with a status of "Action needed". If we click on that invoice, we'll see a banner telling us that this invoice needs to issued manually.
+
+![](/images/guides/quickstart/manual_issue_invoice_detail-0f32c4be7c3839459fd13c42cff6dbf4.png)
+
+Using this setting gives you much more control over your invoices — now, you have as much time as you need to review and edit invoices before manually issuing them and triggering customer-visible side effects like emails. You can also use the "Action needed" filter on the invoice list page to see all the invoices that are ready to be manually issued and issue many (or all of them) at once.
+
+![](/images/guides/quickstart/action_needed_list-505ad4bf6d41cfa30f8a7e3d4b82c8bd.png)
+
+Using manual invoice review can be great as a temporary way to build confidence in your invoicing setup with real customer data before eventually switching over to automatically issuing invoices, or as a permanent way to handle manual steps in the invoicing process (like adjusting invoicing manually for enterprise customers) or spot check invoices before issuing.
+
+## Additional invoicing configuration[](#additional-invoicing-configuration "Direct link to heading")
+
+For more information about the invoice portal, configuring automated tax collection, adjusting invoices, and customizing the invoice structure, visit the Orb documentation on [Invoicing](/guides/invoicing/).

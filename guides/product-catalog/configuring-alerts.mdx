@@ -1,0 +1,35 @@
+---
+title: "Create alerting rules"
+---
+
+Orb lets you set alerts that trigger [webhooks](/guides/integrations-and-exports/webhooks) when active subscriptions hit specific usage and cost thresholds. These alerts are evaluated in real time, and can be used to notify internal teams of anomalous activity, power an overage notification workflow to customers, or prevent excessive use of a product feature.
+
+All alerts in Orb support a multi-threshold configuration, allowing you to set incremental alerting values. By default, alerting thresholds follow a monthly evaluation cadence and reset each billing period.
+
+In cases where two or more thresholds are crossed in quick succession, Orb ensures that a single notification for the greater of the thresholds is delivered to your webhook handler.
+
+## Types of alerts[](#types-of-alerts "Direct link to heading")
+
+| Alert type | Description                                                                                                                                                                                                           | Webhook event type                                                    |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Usage      | These alerts are tied to a specific [billable metric](/guides/events-and-metrics/construct-metrics). The alert is triggered when usage exceeds a pre-specified numeric threshold in the quantity units of the metric. | subscription.usage\_exceeded                                          |
+| Cost       | Triggered when the upcoming invoice for the subscription exceeds a monetary threshold. Note that this accounts for minimums and fixed fees.                                                                           | subscription.cost\_exceeded                                           |
+| Balance    | Triggered when the prepurchase ledger is depleted to a configured threshold.                                                                                                                                          | customer.credit\_balance\_depleted, customer.credit\_balance\_dropped |
+
+![subscription-alerts-cost.png](/images/guides/product-catalog/subscription-alerts-cost-39b9b692f50e628d6d6bcd81f5b73c74.png "A multi-threshold cost alert")
+
+## Managing alert states[](#managing-alert-states "Direct link to heading")
+
+Alerts are often tied to a specific plan or _type_ of subscription. Accordingly, Orb allows you to configure alerts on the plan itself and automatically propagates them to all subscriptions of that plan. This allows you to quickly add an alert to an existing plan without having to run a migration over existing subscriptions. Similarly, when an alert is disabled, this change applies to all subscriptions.
+
+![plan-alerts.png](/images/guides/product-catalog/plan-alerts-491cfeb33e7708d369da4ad3c91c4f06.png "Multi-threshold usage alert for the plan")
+
+It's often useful to set ad hoc alerts for specific customers (especially when dealing with Enterprise contracts), so alerts can also be managed at the individual subscription level. Orb's subscription card allows you to view alerts inherited from the plan and change them for the specific subscription instance. With this workflow, you can create alerts that correspond to a customer's usage patterns, even if they differ from other subscriptions to the same plan.
+
+![inherited-alerts.png](/images/guides/product-catalog/inherited-alerts-71da0e5039fbc2854d01789e6aef51f6.png "Each subscription shows inherited alerts")
+
+## Viewing triggered alerts[](#viewing-triggered-alerts "Direct link to heading")
+
+Each subscription card on the customer page in Orb shows which alerts have been triggered during the current billing period, and the time at which the threshold was exceeded.
+
+![alerts-view.png](/images/guides/product-catalog/alerts-view-5e77c400c21f4e200c6370b554c6d3a5.png)

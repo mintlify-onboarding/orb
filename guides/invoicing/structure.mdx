@@ -1,0 +1,75 @@
+---
+title: "Structure and lifecycle"
+---
+
+Invoices are a business document which are associated with a customer and optionally an Orb subscription. Each invoice contains:
+
+* Metadata about you as a vendor (e.g. your logo, name, business address)
+* Metadata about your customer (e.g. shipping and billing address, tax information)
+* A list of line items representing accrued charges, usually for an active billing period. These line items ladder up to an amount due for the end user.
+* Invoice terms, including its due date and auto-collection settings
+
+Unlike other billing providers, Orb’s invoices have been reimagined from the ground up to support the sophisticated needs of hybrid and usage-based models. An Orb invoice displays the intricacies of models like tiered pricing and allow you to structure by dimensions determined from usage events.
+
+Orb invoices also display a day-by-day summary of usage inline, allowing your customers to understand trends and spikes in each of the usage metrics on the invoice.
+
+Each Orb invoice also has a footer (configurable in account settings) as well as a memo, which can be customized per plan and changed on any individual invoice.
+
+### Types of invoices[](#types-of-invoices "Direct link to heading")
+
+Invoices can either be associated with a recurring subscription or represent an ad hoc charge. For example, when adding pre-purchase credits to an Orb customer, Orb can issue a one-off invoice based on the cost-basis of these credits — this invoice is not associated with a subscription, and does not inherit any prices from a plan.
+
+### Custom invoice grouping[](#custom-invoice-grouping "Direct link to heading")
+
+It can be useful to group invoice line items in a more meaningful way for your customers than the individual prices that are configured in Orb.
+
+For example, as an infrastructure provider you might have a plan with prices corresponding to charges for storage, network traffic, and compute across each cluster that your customers operate. By default, this would generate an invoice that breaks down each of these costs aggregated across all clusters.
+
+If each of your reported events to Orb contains a `cluster_name`, then Orb can automatically re-organize your invoice to be grouped by the cluster’s name at the top level. Orb would then automatically split the costs of storage, network traffic, and compute for each cluster.
+
+## Invoice states[](#invoice-states "Direct link to heading")
+
+Orb manages your invoice lifecycle automatically while still allowing you to use manual actions (like manually voiding, issuing, and marking invoices as paid) when you need them to maintain control. For the vast majority of workflows, Orb Invoicing's integration with the underlying billing system and payment gateway eliminates manual process entirely.
+
+![invoice-status-colored.png](/images/guides/invoicing/invoice-status-colored-47c7da96c89135d595c9a4d76b3c89f6.png "Invoice states in Orb Invoicing")
+
+Every active subscription in Orb has an associated **draft** invoice, representing the accrual of charges in the current billing period; invoices associated with subscriptions never need to be manually created, issued, or refreshed. While in draft state, the values on an invoice are subject to change, and often will do so continuously as usage is happening. Since Orb automatically maintains the values on this draft invoice throughout the billing period, the preview of a customer’s bill is always available in the invoice format.
+
+Once a subscription billing period ends — most commonly at the end of a month — the associated invoice enters a configurable grace period, during which values may still change as a result of late event reporting. Orb will not accept events with timestamps before the current grace period, ensuring that an invoice always reflects the entirety of events that have been ingested.
+
+After the grace period is over, the invoice is eligible to be issued. There are two ways an invoice can transition to the issued state:
+
+* If your account is configured to issue invoices automatically, the invoice will immediately be issued.
+* If your account is configured to require manual issuance of invoices, the invoice will transition to the action needed state. It can then be manually issued from the webapp or API.
+
+Once an invoice is `issued`, it can:
+
+* Transition to the `paid` state. This may happen as the result of an Orb-initiated auto-collection action, a user paying the invoice through the invoice portal, or the invoice being manually marked as paid. Note that $0 invoices are automatically marked as `paid` upon issuance and do not send email notifications.
+* Transition to the `synced` state. Orb supports syncing to enterprise invoicing providers, such as Bill.com and Stripe Invoicing — this is a one-way sync, and Orb will not pick up changes to the invoice once it’s synced.
+* Transition to the `void` state by being manually marked as void. When an invoice is voided, any balance it consumes is reversed.
+
+Note that the invoices list in the dashboard will display additional statuses, including the `failed` state (representing either invoice that failed to issue due to a misconfiguration, or a failed payment), and a `processing` state, to represent invoices whose payment is in progress. The dashboard is optimized for actionability, allowing you to quickly triage invoices that require your attention and to provide an easy way to summarize the month’s invoices.
+
+Once an invoice's grace period has elapsed and it is eligible for auto-issue, it will be in a `pending issue` state in the Orb dashboard, to signify that Orb will shortly issue the invoice. No manual action is required in this state.
+
+### Synced invoices[](#synced-invoices "Direct link to heading")
+
+If you're migrating to Orb with an existing invoicing solution in place, Orb's invoicing model allows you to maintain these connections via [Bill.com](https://bill.com/), [Stripe Invoicing](https://stripe.com/invoicing), [QuickBooks Invoicing](https://quickbooks.intuit.com/global/invoicing/), and [NetSuite](https://www.netsuite.com/).
+
+With these invoicing connections in place, Orb does not handle email delivery of your invoice, and cannot track the invoice status. If the invoice is paid (or manually edited or voided), these changes do not automatically reflect on Orb's invoice.
+
+To set up these invoicing methods, two mappings need to be configured:
+
+* A mapping between Prices and Items in Orb to the corresponding Services or Products in the invoicing provider. This ensures that line items will be labeled appropriately.
+* The link between an Orb customer and a customer in the invoicing provider, in order to properly attribute the invoice. Note that this also requires setting the `payment_provider` attribute on the customer to the corresponding provider.
+
+Once in place, the sync process takes place automatically for invoices eligible to be issued when they are connected to an externally invoiced customer.
+
+This invoice sync is a comprehensive integration, and includes native support for:
+
+* Individual line items, including amount, quantity, and rate information.
+* Invoice due date and terms (e.g. Net 30 days)
+* Line items for discounts and minimums, both for individual line-items and for the plan as a whole
+* Tax rates as managed by the invoicing provider
+
+To set up these syncs, click [here](/guides/invoicing/invoicing-integrations/) for instructions

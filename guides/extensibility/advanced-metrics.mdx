@@ -1,0 +1,73 @@
+---
+title: "Implement metrics with SQL"
+---
+
+Orb does not limit you to a fixed set of operators over your raw events when defining your billable metrics. For the overview of billable metrics, see [creating usage metrics](/guides/events-and-metrics/construct-metrics).
+
+### Computed properties[](#computed-properties "Direct link to heading")
+
+The Orb web interface allows you to specify a SQL clause when properties of the original events do not suffice to assemble your metric. For example, you might want to multiply a property by a constant factor, combine two properties of the event, or use a function like `COALESCE` to handle `null` values. When composing your billable metric with a computed property, Orb shows you a preview the computed property across the events displayed.
+
+### SQL support[](#sql-support "Direct link to heading")
+
+Traditional billing systems support a rigid set of operators over the reported metric, such as `LAST` or `MAX`, not allowing you to perform sophisticated transforms or usage calculations.
+
+Orb is designed to be extensible at its core, and allows you to define metrics fully in SQL. Orb’s SQL engine runs in real-time over your reported events stream, while still providing you **SQL syntax support**. SQL queries run over the entirety of events in the billing period, and not just an incremental slice of reported events, so you never have to worry about keeping track of intermediate stream state.
+
+For example, customers use Orb’s SQL metrics layer to:
+
+1. Use `CASE` statements and conditionals to construct sophisticated compute units that bill differently for each event.
+2. Use sub-queries for more sophisticated aggregations, such as calculating average volume over the month _excluding_ the top _n_ days of usage.
+3. Transform and scale event properties before they are used for billing purposes.
+
+### Examples[](#examples "Direct link to heading")
+
+The following examples illustrate the sort of computations you can perform with Orb’s SQL metrics layer, assuming that you have the events which match the query (the schema of the event isn't shown here, but feel free to reach out to the Orb team with help modeling both your events schema and the resulting metric).
+
+**Sum of maximum network egress for every cluster every hour**
+
+```
+SELECT SUM(network_egress_per_cluster_per_hour) FROM (
+   SELECT MAX(value) as network_egress_per_cluster_per_hour 
+   FROM events WHERE event_name ='network_egress_db' 
+   GROUP BY cluster_id, HOUR_FLOOR_TIMESTAMP_MILLIS(timestamp_millis) 
+)
+
+```
+
+**Increase in storage over the course of the month**
+
+```
+SELECT MAX(storage_gb) - EARLIEST(storage_gb)
+FROM events 
+WHERE event_name = 'storage_measured' 
+
+```
+
+**Average run time, taking out the longest job**
+
+```
+SELECT (SUM(run_time_ms) - MAX(run_time_ms)) / (COUNT(run_time_ms) - 1)
+FROM events
+WHERE event_name = 'job_run'
+AND job_type = 'identity_verification'
+
+```
+
+**Average number of jobs per hour taking more than 15 seconds**
+
+```
+SELECT AVG(long_jobs_per_hour) FROM (
+    SELECT hour, COUNT(execution_id) as long_jobs_per_hour
+    FROM events
+    WHERE event_name = 'execution_completed'
+    AND execution_state = 'success'
+    AND execution_time_ms > 15 * 1000
+    GROUP BY HOUR_FLOOR_TIMESTAMP_MILLIS(timestamp_millis) 
+)
+
+```
+
+## Executing a metric[](#executing-a-metric "Direct link to heading")
+
+Orb is responsible for keeping your metric value automatically up to date throughout the billing cycle. All you have to do is define it, and Orb executes it in the context of a customer and billing period.

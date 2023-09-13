@@ -1,0 +1,78 @@
+---
+title: "Import from Segment"
+---
+
+With Segment, you can easily integrate your sources with the Orb destination for event ingestion.
+
+info
+
+Note: the Orb destination currently supports track calls only. The [track call](https://segment.com/docs/connections/spec/track/) is how you record any actions your users perform, along with any properties that describe the action. This is typically used to trigger events based on user actions. At Orb, each track call sent to our destination from any of your sources is ingested as a single usage event.
+
+### Overview[](#overview "Direct link to heading")
+
+1. From the Destinations catalog page in the Segment App, click **Add Destination**.
+2. Search for "Orb" in the Destinations Catalog, and select the "Orb" destination.
+3. Choose which Source should send data to the "Orb" destination.
+4. Go to the [Orb dashboard](https://app.withorb.com), create a new API key from the configuration's page or reuse an existing one. We recommend creating a new API key for this integration.
+5. Enter the "API Key" in the "Orb" destination settings in Segment.
+6. Fill out settings for how to map event properties (see below for configuration defaults).
+
+### Configuring event transformations[](#configuring-event-transformations "Direct link to heading")
+
+Orb's destination supports settings for any field mappings from within your `properties` object passed to the track call, as well as configurable fields for `event_name`, `idempotency_key`, and `external_customer_id`. Orb does not allow specifying a field for `timestamp` and will honor the Segment event `timestamp`. Defaults are available for certain top level fields:
+
+| Orb event field        | Default Segment event field  | Segment connection settings name |
+| ---------------------- | ---------------------------- | -------------------------------- |
+| event\_name            | event                        | Event name field                 |
+| idempotency\_key       | messageId                    | Idempotency key field            |
+| external\_customer\_id | No default                   | External customer ID field       |
+| timestamp              | timestamp (Not configurable) |                                  |
+
+For example, if your track call from a Segment source looks like:
+
+```
+analytics.track({
+  event: "payment_confirmed",
+  userId: "external_customer_id",
+  properties: {
+    amount: 100.00,
+    currency: "USD",
+    confirmation_time: "2022-05-11T21:33:13.1652304793Z"
+  }
+});
+
+```
+
+and your desired event properties format looks like:
+
+```
+{
+  "total_charge": 100.00,
+  "denomination": "USD",
+  "confirmation_time": "2022-05-11T21:33:13.1652304793Z"
+}
+
+```
+
+then the following `Properties mapping fields` configuration for your destination will yield the desired event format:![](/images/guides/events-and-metrics/segment-properties-mappings-e4ee648d830c59d1124ac1e1b26c20ef.png)
+
+Along with the defaults for the other fields, and the `External customer ID field` set to `userId`, your ingested event would look like:
+
+```
+{
+  "idempotency_key": "segment.messageId",
+  "event_name": "payment_confirmed",
+  "external_customer_id": "external_customer_id",
+  "timestamp": "segment.timestamp",
+  "properties": {
+    "total_charge": 100.00,
+    "denomination": "USD",
+    "confirmation_time": "2022-05-11T21:33:13.1652304793Z"
+  }
+}
+
+```
+
+### Configuration constraints[](#configuration-constraints "Direct link to heading")
+
+Orb enforces a type constraint on the `Properties mapping fields`, requiring all keys and values in this configuration setting to be strings. In the event that we receive a request with a different type for any of the fields in this setting, we will raise a `400 Request validation error` error and Orb will not ingest the Segment event.

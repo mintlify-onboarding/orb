@@ -1,0 +1,75 @@
+---
+title: "Sync to accounting solutions"
+---
+
+In order to serve the needs of your business, Orb integrates with your existing accounting systems to help your finance team manage the revenue recognition process.
+
+note
+
+Orb's accounting integrations support NetSuite, QuickBooks and Xero (beta).
+
+There are two different shapes of accounting integration that Orb aims to fully support:
+
+1. **Invoices and payment sync**: Orb syncs your invoice and payment data to your accounting provider, leaving all revenue recognition logic to your accounting system. This is the simplest integration to initially set up, but requires your finance team to appropriately account for each invoice based on rules that may already be set up in a system like NetSuite.
+2. **Managed revenue recognition with journal posting**: Orb generates entries corresponding to the journal of accounts used for revenue recognition. Although this requires more tailored setup, it allows Orb to fully automate the revenue recognition process and generate aggregate journal entries against your revenue ledger. As this integration requires customization to your accounting system to ensure that it fits with your existing accounting methodology, it is only available on the Enterprise plan.
+
+## Invoice accounting sync[](#invoice-accounting-sync "Direct link to heading")
+
+The invoice accounting sync will sync and update invoices and associated records in your accounting provider through the lifecycle of the invoice in Orb. The accounting sync will run periodically to check if any records have not been synced and send them to your accounting provider. The records are synced as follows:
+
+* Invoices are synced as invoices
+* Customers are synced as customers
+* Customer balance transactions are synced as credit memos
+* Credit notes are synced as credit memos
+* Payments are synced as payments
+
+When invoices are voided in Orb, we will void the invoice and delete any associated credit memos in the accounting provider. Credit notes can also be voided directly in Orb, and this will cause the associated credit memo to be deleted from your accounting provider.
+
+### Invoicing accounting sync settings[](#invoicing-accounting-sync-settings "Direct link to heading")
+
+There are five settings available to configure your invoice accounting sync. These provide the ability to filter down the set of invoices that will be synced and determine whether Orb will generate customers within your accounting provider.
+
+1. **Minimum issue date**: Orb will only sync invoices issued on or after the minimum issue date. This is an optional setting and if it's not set, then Orb will sync all invoices in your account. A common use for this setting would be for migrating to Orb as the source of data in your accounting system. In that case, you would set the minimum issue date to be the date you intend to cut over to using Orb data.
+2. **Minimum amount**: Orb will only sync invoices with a total equal or greater than the minimum amount. This is an optional setting and if it's not set, then Orb will sync all invoices in your account. A common use for this setting is to only sync invoices that are collectible in your payment provider.
+3. **Create customers**: When on, Orb will create a customer record in your accounting provider if there is no mapping provided when an invoice needs to be synced. When off, Orb will skip syncing any records for all unmapped customers. Customers can be mapped manually via the API or UI. A common use case for this setting is to skip creating customers while migrating to Orb as the accounting data source and mapping all Orb customers to the existing accounting provider customers.
+4. **Skip $0 in invoices**: When on, Orb will not sync $0 invoices. A common use case for this setting is to turn it on so that the all invoices that are synced will impact revenue recognition.
+5. **Skip $0 line items**: When on, Orb will not sync line items that have a total of $0\. A common use case for this setting is to simplify the data provided by Orb in the case that invoices by default have a significant number of line items.
+
+### Configuring an accounting sync[](#configuring-an-accounting-sync "Direct link to heading")
+
+Setting up an accounting sync requires the same initial setup as configuring any of the accounting providers to be used for invoicing. Start by following the [invoicing integration guide](/guides/invoicing/invoicing-integrations/) and stop after you have successfully mapped Items. Once items are mapped, you are ready to create an accounting sync and configure its settings. Navigate to the **Accounting** tab under **Settings** and you should see the configured accounting provider with a configure button like the image below. 
+
+![Configure accounting](/images/guides/integrations-and-exports/configure-accounting-5efb97e3b35b2838dc7fd7ac44095d76.png)
+
+When you click **Configure** in the accounting sync settings, you will see the settings listed above. Once you have updated the settings and created the accounting sync, you will have the option to enable it. If you have customers already existing in your accounting provider, this is the time to map your existing customer records to your Orb customers so that duplicate customer records are not generated in your accounting provider.
+
+![Create sync](/images/guides/integrations-and-exports/create-accounting-5f10d75ccb65e720760f6707575abd92.png)
+
+The view all button on the accounting sync card is the entrypoint to see the accounting sync record view. The record view shows all attempts to sync records to your accounting provider both successful and failed attempts.
+
+![Record view](/images/guides/integrations-and-exports/record-view-5a0f4319a7f6f67d482c5dda6bae5f1d.png)
+
+### Failures and retries[](#failures-and-retries "Direct link to heading")
+
+If a record fails to be synced to your accounting provider, it will be shown as failed in the accounting sync record view. When failures occur, they will not be automatically retried. You can check the failure reason by hovering over the failure status. You should be able to resolve the issue in your provider or Orb account before selecting the retry action in the menu. Please reach out to the Orb team if you cannot resolve any failures. You can retry or resync records via the three dot menu in the accounting sync record table at any time. Resyncing invoice records will cause all related records (payments, credit notes, and customer balance transactions) to be resynced as well. This is because the existing associated records will not be linked to the correct record, and we recommend deleting all of the associated records before attempting to resync records.
+
+note
+
+Orb's revenue recognition accounting integration is currently in beta, and support NetSuite, QuickBooks and Xero. Integrating with these systems for revenue recognition is often a company-specific process, so an Orb team member will work with you to set up the appropriate integration shape for your business.
+
+## Managed revenue recognition[](#managed-revenue-recognition "Direct link to heading")
+
+In many cases, the final invoice and payment data is **not** sufficient to run a complete revenue recognition process. Specifically, since revenue must be recognized on an accrual basis as per AS606 guidance, transactions posted at the invoice issue date will inaccurately reflect the revenue recognized in a given period.
+
+tip
+
+Currently, Orb's revenue recognition system can facilitate posting entries that correspond to Revenue, Deferred Revenue, and the Bookings/Billings. These correspond to invoices and credit notes in Orb. Orb does not currently manage the General Ledger impact of payment and refunds. Orb maintains this information as the invoicing provider and cash reconciliation is part of the accounting product roadmap.
+
+For example, if your business does not align to calendar billing, your accounting close process will require you to recognize revenue for a given period based on the usage data that was reported to Orb even for unbilled charges. Similarly, if you use prepurchase drawdowns, you're required to track these drawdowns for revenue recognition even if new invoices have not been generated. 
+
+In these cases, Orb can generate revenue recognition entries for you to import into your accounting system. Regardless of your current NetSuite setup, the raw data that underlies this sync is detailed in the [revenue recognition guide](/guides/revenue-reporting/revenue-recognition). This integration requires a custom setup to ensure that the revenue recognition entries are generated in the correct format for your accounting system, Orb's reports are configured to match the journal of accounts you currently use, and the specific configuration of your NetSuite instance (e.g. whether you're using NetSuite Advanced Revenue Management or a legacy revenue recognition module).
+
+In order to configure automated posting of journal entries into your revenue ledger, the following configuration is required:
+
+* The timing of your close process: By default, journal entries are posted when the relevant period closes. This ensures that the entries capture the full set of revenue in the accounting period, and you can make any adjustments as required (including any credit memos that affect invoices for the accounting period).
+* Creating a revenue recognition rule (sometimes called an amortization schedule), which specifies the method of revenue recognition and its subsequent impact to the general ledger. By default, Orb bases the service period per the dates specified on each invoice line item. For invoices generated by subscriptions, the invoice line item dates are automatically managed based on the price cadence.

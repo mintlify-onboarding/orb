@@ -1,0 +1,157 @@
+---
+title: "Enrich invoices with tax"
+---
+
+## Handling tax on invoices[](#handling-tax-on-invoices "Direct link to heading")
+
+Orb provides one-click integrations with tax providers in order to ensure compliance for your business. We recommend and integrate with solutions like [TaxJar](https://www.taxjar.com/), [Avalara's AvaTax offering](https://www.avalara.com/us/en/products/calculations.html) and [Anrok](https://anrok.com/) which automatically maintain tax rates per nexus, preventing you from having to keep up to date with changes to the tax code or your tax obligations which can vary based on your sales. These tools also provide tax filing and reporting functionality, and being connected with your billing provider prevents data entry errors in this process.
+
+Orb’s integrations with these tax providers provides the following functionality:
+
+* Given a customer’s shipping address and your product’s tax classification (e.g. Infrastructure as a Service), Orb can calculate the appropriate tax amount.
+* Orb will display tax line items on a _per line item_ basis, as necessary, on invoices. This allows you to charge a different tax rate per _product type_ on a single invoice.
+* For automated charges that result from an invoice (e.g. via Stripe payments), Orb will include applicable taxes when creating the charge.
+* In the case that an Orb invoice has an invoice level discount, Orb will distribute the discounted amount across the line items proportional to the line item totals.
+
+Note that the tax calculation will reflect on both the [Invoice portal](/guides/invoicing/invoice-portal) as well as the invoice PDF.
+
+## Displaying tax identifiers on invoices[](#displaying-tax-identifiers-on-invoices "Direct link to heading")
+
+If your customer has a tax ID that is required to be displayed on an invoice, you can [set](/reference/update-customer) the Customer Tax ID on the Customer. Any draft invoices will display the customer's current tax ID. Any issued invoices will save the customer's tax ID at the time of issuance onto the invoice, which cannot be changed.
+
+## Anrok[](#anrok "Direct link to heading")
+
+When your account is integrated with Anrok, all of your invoices will be automatically enriched with Anrok-sourced tax amounts. The Orb integration with Anrok supports computing tax for non-US based obligations like VAT. 
+
+### Overview[](#overview "Direct link to heading")
+
+Orb's integration with Anrok syncs invoice amounts to Anrok for computing tax, applying the tax amounts to the Orb Invoice, and reporting tax to Anrok so it can be used in filing procedures. When an invoice is eligible to be issued, Orb will create an ephemeral transaction in Anrok. When an invoice in Orb transitions to a status of paid, Orb will create the transaction in Anrok. This marks the transaction to be reported to a tax authority in Anrok.
+
+For each transaction, Orb will also send the customer address in order to accurately compute tax based on your defined jurisdictions in Anrok. Anrok will compute the tax per invoice, returning the data to Orb, which Orb will use to enrich tax information for downstream use in executing external charges or external invoice syncs.
+
+The transaction in Anrok will include the amount per line item, as well as the specified tax code to use for tax computation purposes. In the case that the Orb Invoice has a line item level minimum or discount, Orb will sync these as separate line items to Anrok. Line item discounts are always reflected in Anrok as negative line items. 
+
+### Prerequisites[](#prerequisites "Direct link to heading")
+
+1. We recommend reading the [Anrok getting started guide](https://help-center.anrok.com/hc/en-us/categories/4410165176339-Getting-Started-Guide) before starting
+2. **Anrok account**: Ensure you have an Anrok account, and ideally, an Anrok sandbox which you can connect your Orb test mode account to.  
+   * You can get access to a free Anrok sandbox by contacting the Anrok team
+3. **Physical Nexus**: Ensure that you are correctly recording physical nexus. You can add physical nexus through the Jurisdictions tab and the “Manage Physical Nexus” button.
+4. **Products in Anrok**: Create `products` in Anrok, that associate a tax configuration to each product that you sell in Orb. You’ll need the IDs for these products when configuring the Anrok integration in Orb.
+5. **Customer exemptions in Anrok**: Upload valid exemption certificates for customers, if required. Please make sure to use the Orb customer ID when creating these certificates, so Anrok uses these certificates when calculating tax.
+
+### Connect your Anrok account in Orb[](#connect-your-anrok-account-in-orb "Direct link to heading")
+
+1. Navigate to Settings > Taxes in the Orb dashboard
+2. Select "Connect to Anrok"
+3. Create an Anrok API key if you haven’t yet.  
+   * In your Anrok account, go to settings.  
+   * In the “Developers” section click “Manage API Keys”  
+   * In the upper right corner click the “New key” button
+4. In Orb, enter your Anrok API key and API key secret.  
+   * We expect the sellerId to also be included in the API key, so the format should be `{sellerId}/{apiKeyId}`  
+   * Invalid credentials will error at this stage.
+
+### Setting up your tax codes[](#setting-up-your-tax-codes "Direct link to heading")
+
+#### Anrok tax code configuration[](#anrok-tax-code-configuration "Direct link to heading")
+
+Because different jurisdictions may tax items at different rates, you must also register the type of product in your Anrok instance. To do this, visit the “Product IDs'' section of your Anrok account. You will need to create a unique Anrok Product for each type of product you sell. Note that one product in Anrok may be tied to multiple external product IDs for products of the same type.
+
+#### Orb tax code configuration[](#orb-tax-code-configuration "Direct link to heading")
+
+Orb supports tax code configuration per item used in Orb. Items represent a sellable product or service in Orb and are used during external syncs to ensure that invoice line items in Orb are correctly mapped to any accounting or tax services you rely on from these providers and are correctly handled.
+
+To configure your Anrok tax code mappings, navigate to Settings > Items > Item name > edit. Fill in the External item ID box with the correct ID for the product created in Anrok.![Anrok tax code configuration](/images/guides/integrations-and-exports/anrok_item_mapping-7c197ed3940eda5fae30883f941fdd8a.png)
+
+### Configuring customers for tax computation[](#configuring-customers-for-tax-computation "Direct link to heading")
+
+#### Address requirements[](#address-requirements "Direct link to heading")
+
+Anrok requires each customer in Orb to have a valid shipping address. If a shipping address is not present, Orb will use the billing address for the purposes of tax calculation. In the case of an invalid or missing address, Orb will fail invoice issuance, and notify you in the dashboard of any failed invoices:![Missing address invoice](/images/guides/integrations-and-exports/Avalara_invoice_missing_address-7a180d2baeed58b84b678f712a45eb1e.png)
+
+#### Updating customer addresses[](#updating-customer-addresses "Direct link to heading")
+
+Customer addresses can be set via the API or via the dashboard from the customer details page.
+
+#### Tax exempt customers[](#tax-exempt-customers "Direct link to heading")
+
+In the case of a customer that qualifies for tax exemptions, you need to create a Certificate for the customer in your Anrok dashboard. The customer ID specified in Anrok should be the same as the Orb customer ID, so the exemption is used when reporting to Anrok.
+
+#### Tax IDs[](#tax-ids "Direct link to heading")
+
+If a customer has a tax ID configured in Orb, we will send that ID to Anrok when calculating and reporting tax. This can be used to determine if the transaction is subject to a reverse charge for eligible VAT countries. 
+
+The customer tax ID can be set via the API or via the dashboard from the customer details page. 
+
+## Avalara AvaTax[](#avalara-avatax "Direct link to heading")
+
+When your account is integrated with Avalara, all of your invoices will be automatically enriched with Avalara-sourced tax amounts.
+
+### Overview[](#overview-1 "Direct link to heading")
+
+Orb's integration with Avalara syncs invoice amounts to Avalara for computing tax, applying the tax amounts to the Orb Invoice, and reporting tax to Avalara so it can be used in filing procedures. When an invoice is eligible to be issued, Orb will sync the invoice as a `SalesInvoice` document to Avalara as a new transaction. When an invoice in Orb transitions to a status of `paid`, Orb will `commit` the transaction in Avalara. This marks the transaction to be reported to a tax authority in Avalara, for more information, see the Avalara docs [here](https://developer.avalara.com/api-reference/avatax/rest/v2/methods/Transactions/CommitTransaction/).
+
+For each document, Orb will also specify the `ShipTo` and `ShipFrom` addresses in order to accurately compute tax based on your defined Nexus’ in Avalara. Avalara will compute the tax per invoice, returning the data to Orb, which Orb will use to enrich tax information for downstream use in executing external charges or external invoice syncs.
+
+The document in Avalara will include the quantity, rate, and amount per line item, as well as the specified tax code to use for tax computation purposes. In the case that the Orb Invoice has a line item level minimum or discount, Orb will sync these as separate line items to Avalara. Line item discounts are always reflected in Avalara as negative line items.
+
+### Prerequisites[](#prerequisites-1 "Direct link to heading")
+
+1. **Organization address**: To accurately calculate tax with Avalara, Orb requires an account address to be set as the `ShipFrom` address in Avalara. This can be set from the Orb dashboard under **Settings > Invoices**.
+2. **Nexus in Avalara**: Ensure that your Avalara account is correctly configured with any `nexus` states you may be obligated to collect and remit taxes in.
+
+### Connect your Avalara account in Orb[](#connect-your-avalara-account-in-orb "Direct link to heading")
+
+1. Navigate to **Settings > Taxes**
+2. Select "Connect to Avalara"
+3. Enter your Avalara username/password. We recommend provisioning a separate account for your Orb integration. A valid set of credentials should display the following view. Invalid credentials will error at this stage.
+
+![Avalara_configuration.png](/images/guides/integrations-and-exports/Avalara_configuration-f5cbf7171b3610a8ba7ec37470561b6f.png)
+
+### Configuring tax calculation in Orb[](#configuring-tax-calculation-in-orb "Direct link to heading")
+
+Orb allows a few controls for how Avalara is used in the invoice issuance process.
+
+* **Compute tax**, when toggled on, Orb will _always_ use Avalara to compute tax on any invoice eligible for issuance. If a customer is marked as tax exempt, Orb will forego tax calculation on any invoices for that customer.
+* **Commit tax**, when toggled on, Orb will commit a transaction in Avalara when the corresponding invoice transitions from the issued state to the paid state. When toggled off, Orb will only use Avalara for sales tax calculation, not reporting. More information can be found in the [Avalara docs](https://developer.avalara.com/avatax/reportable-transactions/) regarding reportable transactions.
+* **Server side logging**, when toggled on, Orb will log requests and responses for every request made to Avalara. These logs can be made available upon request via Slack.
+* **Avalara company code**, Orb will use the company code specified as the company to create and report transactions with.
+
+### Setting up your tax codes[](#setting-up-your-tax-codes-1 "Direct link to heading")
+
+Orb supports tax code configuration per item used in Orb. Items represent a sellable product or service in Orb and are used during external syncs to ensure that invoice line items in Orb are correctly mapped to any accounting or tax services you rely on from these providers are correctly handled.
+
+To configure your Avalara tax code mappings, navigate to **Settings > Items > Item name > edit**.![Avalara tax code configuration](/images/guides/integrations-and-exports/Avalara_item_mapping-c5ee62cadb5678a9d22c9958ebb2ae42.png)
+
+The external items dropdown is populated by Avalara's comprehensive list of tax codes, which can be found [here](https://taxcode.avatax.avalara.com/).
+
+### Configuring customers for tax computation[](#configuring-customers-for-tax-computation-1 "Direct link to heading")
+
+#### Address requirements[](#address-requirements-1 "Direct link to heading")
+
+Avalara requires each customer in Orb to have a valid shipping address. If a shipping address is not present, Orb will use the billing address for the purposes of tax calculation. In the case of an invalid or missing address, Orb will fail invoice issuance, and notify you in the dashboard of any failed invoices:
+
+![Missing address invoice](/images/guides/integrations-and-exports/Avalara_invoice_missing_address-7a180d2baeed58b84b678f712a45eb1e.png)
+
+#### Updating customer addresses[](#updating-customer-addresses-1 "Direct link to heading")
+
+Customer addresses can be set via the [API](/reference/update-customer) or via the dashboard from the customer details page.
+
+#### Tax exempt customers[](#tax-exempt-customers-1 "Direct link to heading")
+
+In the case of a customer that qualifies for tax exemptions, Orb allows for configuring tax exempt status in the dashboard and the [API](/reference/update-customer).
+
+From the webapp, this can be found under Customer details in the customers page. By default, all customers are eligible for tax collection.
+
+## Stripe Tax[](#stripe-tax "Direct link to heading")
+
+For your customers with a backing Stripe provider (e.g. Stripe Invoices), Orb will automatically use Stripe to enrich your invoice with tax calculations.
+
+Stripe Tax configuration is done entirely through your Stripe Dashboard. Find the Stripe Tax documentation here: [Stripe Tax](https://stripe.com/docs/tax). Orb maintains a mapping between prices and Stripe products to assign a per-line item tax treatment.
+
+## TaxJar[](#taxjar "Direct link to heading")
+
+When your account is integrated with TaxJar, all of your invoices will be automatically enriched with TaxJar-sourced tax amounts.
+
+TaxJar integration can be configured through your organization settings.

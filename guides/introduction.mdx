@@ -1,0 +1,37 @@
+---
+title: "Getting Started"
+---
+
+## Architecture principles[](#architecture-principles "Direct link to heading")
+
+Orb's architecture is built with the following principles in mind:
+
+<Card title="Accurate and auditable" icon="bullseye" href="/guides/events-and-metrics/reporting-errors" iconType="duotone">
+    Orb gives you the visibility to trace how each event contributes to your billing process. The platform is designed to be resilient to failure scenarios through the use of audit-safe amendments.
+</Card>
+<Card title="Built for real time scale" icon="timeline" href="/guides/events-and-metrics/event-ingestion" iconType="duotone">
+    Orb's event-based APIs, such as event ingestion, are designed to handle extremely high throughput and scale with concurrent load. Orb also provides a real-time event balance and a highly performant webhooks architecture.
+</Card>
+<Card title="Flexibility at the forefront" icon="up-down-left-right" href="/guides/extensibility/advanced-metrics" iconType="duotone">
+    Orb places a core focus on the extensibility of the platform, providing a custom SQL metrics layer and a custom pricing platform.
+</Card>
+
+<br />
+
+<Frame>![orb_overview.png](/images/guides/orb-overview-2c3e978ba0c95fb3a1e6920256fd1241.png)</Frame>
+
+## Integrating with Orb[](#integrating-with-orb "Direct link to heading")
+
+<Tip>
+    You can use Orb's publicly available [demo environment](https://demo.withorb.com/) to explore the platform's functionality and its core concepts. Orb provides vertical-specific illustrative options to help you understand how these capabilities would translate to your business.
+</Tip>
+Orb is designed to be quick to integrate, with an available sandbox to test the platform's functionality. The overall structure of the integration involves:
+
+* [Ingesting events](/guides/events-and-metrics/event-ingestion) and [building your metrics](/guides/events-and-metrics/construct-metrics). With these pieces in place, Orb can consume an event stream and automatically keep usage quantities up to date.
+* Setting up your plans and pricing in a [product catalog](/guides/product-catalog/build-catalog). This step associates your metrics with your business motion and pricing model.
+* [Provisioning subscriptions](/guides/product-catalog/subscription-management) for each of your customers, so you can track usage in real time. Tracking the subscription lifecycle and [accrued usage](/guides/product-catalog/usage-visibility) through Orb gives you a better window into account health and creates new opportunities for revenue growth.
+* Configuring [invoicing and payment](/guides/invoicing/), which allows Orb to automatically process charges and issue invoices on your behalf. This eliminates manual data entry and streamlines communication with your customers.
+
+## Working with the API[](#working-with-the-api "Direct link to heading")
+
+[Orb's API](/reference/api-reference) is designed around REST principles, where core billing models are the resource entities. To best understand how different entities interact with each other, it's helpful to understand the [core data model concepts](/guides/concepts).

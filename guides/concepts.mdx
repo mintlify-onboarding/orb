@@ -1,0 +1,105 @@
+---
+title: "Core Concepts"
+sidebarTitle: "Overview"
+description: "In order to best use Orb, there are a few core data model concepts that are important to understand. The aim of this guide is to serve as a central resource to navigating these concepts, tying together both developer guides as well as specific API reference documentation to programatically manipulate these concepts."
+---
+
+For a visual reference of the core entities, see [this diagram](/guides/concepts#object-model-diagram) at the end of this guide.
+
+## Account[](#account "Direct link to heading")
+
+Every Orb resource lives within an Account. A single user of Orb (any person with access to the product) by default has access to _two_ accounts, a **live** mode and a **test** mode. Note that other than sharing a user login, these environments are completely isolated, and you will need to use separate API credentials to access each account. In some cases, it's possible to automatically copy objects between accounts to "promote" a configuration in test mode to live mode.
+
+The test mode account cannot be connected to a production payment processor, which prevents unintended money movement in non-production scenarios. The test mode account _can_ still send emails to your users when triggered manually, in order to enable end to end testing of Orb.
+
+<Note>
+    In addition to using Orb's test mode for _manual_ testing, consider integrating the test mode environment with your CI/CD pipeline for automated integration testing with Orb. 
+</Note>
+
+There are a few critical settings configured per account. In addition to those configurable on the[account settings page](https://app.withorb.com/settings) directly, the following settings are configured during our onboarding process:
+
+* Ingestion grace period: Determines how far the `timestamp` that an event is labeled with can lag the current wall time (usually 12 hours). As a side-effect, this is the minimum amount of time that Orb waits before issuing an end of period invoice that contains usage.
+* Account logo: Determines the custom branding treatment your invoices and end-user facing links.
+* Timezone: Your account-wide timezone determines default billing behavior; see [timezones](/guides/product-catalog/timezones)for a more detailed discussion.
+
+## Customer[](#customer "Direct link to heading")
+
+A Customer is a representation of a business or user that you sell to. Orb generally does not have personally identifying information about your customers, other than a name and email address. A Customer is the basis for all billing in Orb, and is the entity that has events, subscriptions, invoices, and payments associated with it. 
+
+<Tip>
+    Orb recommends setting the `external_customer_id` field on every Orb customer to a stable ID in your system, such as your customer's primary key. This allows you to avoid denormalizing any Orb Customer IDs in your datastore, and makes both event reporting and resource management easier.
+</Tip>
+
+| Resource                                                           | Description                                                                                                                                                                                                                          |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Customer API reference](/reference/create-customer)               | Used to create, update, and fetch customers in Orb. If you have a self-serve business where users can sign up for service without your intervention, you should use this API to create a customer in Orb every time a user signs up. |
+| [Customer ID aliases](/guides/events-and-metrics/customer-aliases) | Use customer aliases for more ergonomic interaction with Orb's customer APIs.                                                                                                                                                        |
+
+## Event[](#event "Direct link to heading")
+
+An Event is a business-specific piece of data that you send to Orb. Depending on your business, the exact shape of your event stream may vary; events will form the basis of any usage-based prices that you charge your customers on.
+
+Events are meant to be the _raw data_ that your application emits, rather than the change in a specific billable value; this gives you the flexibility to integrate your event stream once and evolve the metrics you construct over these events over time as requirements change. For example, if you're tracking the number of monthly active users in your application, you should send Orb an event for each login (or perhaps even user activity) rather than the updated count of active users based your own aggregate summaries.
+
+| Resource                                                      | Description                                                                                                                                                               |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Ingestion quickstart](/guides/quickstart/ingest)             | Takes you through some simple API commands so you can familiarize yourself with sending events to the API.                                                                |
+| [Ingestion guide](/guides/events-and-metrics/event-ingestion) | The developer guide includes examples of domain-specific events, how to determine your customized event schema, and the various ingestion integrations that Orb supports. |
+| [Batch ingestion API](/reference/ingest)                      | A key part of any Orb integration, used to send events to the Orb platform. Orb is responsible for storing and appropriately indexing your event data.                    |
+| [Events backfill API](/reference/create-backfill)             | Event backfills support overwriting previously ingested events in an audit-friendly way.                                                                                  |
+
+## Metric[](#metric "Direct link to heading")
+
+A metric, also known as a "billable metric", is a query over ingested events that outputs an aggregate value. This aggregate value (e.g. a `COUNT` or a `SUM`) can then be tied to a pricing model. Conceptually, think of a metric as a materialized view that Orb is responsible for keeping up to date for the relevant set of customers and billing periods; a metric doesn't need to contain any customer or time specific context to operate.
+
+| Resource                                                              | Description                                                                                                                          |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| [Metrics quickstart](/guides/quickstart/ingest)                       | Walks through the creation of some simple metrics, and is a useful starting point to understand filters available in the Orb webapp. |
+| [Metric creation guide](/guides/events-and-metrics/construct-metrics) | Learn more about how to compose a metric, its component parts, and how custom metrics can be built via the flexibility of SQL.       |
+
+## Item[](#item "Direct link to heading")
+
+An Item is a representation of what you sell. An Item does not necessarily represent a standalone sellable product; rather, it's likely to be a component of a bundle that your business sells. Items are most directly used when tying data in Orb to a third-party. For example, Item mappings are used to tie to a tax treatment in tax automation software, or to sync line items to a different invoicing solution such as Stripe Invoicing or QuickBooks.
+
+Items are most often configured _implicitly_ during the creation of other resources. For example, when you create a Metric, you must create or choose an existing Item. To manage your Items and their mappings, navigate to the [Items page](https://app.withorb.com/settings?tab=items&status=all%5Fitems) in the Orb webapp.
+
+## Plan and price[](#plan-and-price "Direct link to heading")
+
+A Price is a representation of how much you charge for a given Item, where the usage is determined by a specific Metric. Each price has a specific "price model" (unit pricing, tiered pricing, etc.), which determines how the price is calculated from the aggregate value of the metric.
+
+A plan consists of one or more prices, and is often what you might consider your 'list' pricing. For example, if you see multiple tiers of your offering such as Pro, Starter, or Gold, each of these would correspond to a plan in Orb. Although a plan sets up default pricing for a given Item, it's possible to override the pricing for a specific customer when creating a subscription.
+
+| Resource                                                   | Description                                                                                  |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| [Configure pricing quickstart](/guides/quickstart/pricing) | Shows the creation of a new plan in the Orb webapp, to help familiarize you with the basics. |
+| [Product catalog](/guides/product-catalog/build-catalog)   | Details the different pricing levers that are available in the Orb webapp.                   |
+| [Plan API reference](/reference/fetch-plan)                | Used to fetch the pricing structure and any associated metadata for a specific plan.         |
+
+## Subscription[](#subscription "Direct link to heading")
+
+A subscription represents a customer's recurring relationship with your business, and ties a Customer to a Plan in Orb. Depending on your business, a subscription may correspond to a specific service agreement or contractual commitment, or it may be the side-effect of your customer signing up to use your product.
+
+| Resource                                                                   | Description                                                                                                                                                                 |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Subscription quickstart](/guides/quickstart/subscriptions)                | Guides you through the creation of a new subscription in Orb, and highlights important elements of the subscription lifecycle including your first set of invoices.         |
+| [Subscription management](/guides/product-catalog/subscription-management) | A detailed overview of the subscription lifecycle, and how core billing mechanics operate on Subscriptions.                                                                 |
+| [Subscription API reference](/reference/create-subscription)               | Used to create subscriptions in Orb, including any overrides required to the pricing configuration of the base plan.                                                        |
+| [Subscription costs API](/reference/fetch-subscription-costs)              | Used to fetch accrued costs across a timeframe of the subscription. Integrate this API with your in-product billing portal to provide real-time transparency to your users. |
+
+## Invoice[](#invoice "Direct link to heading")
+
+An invoice represents the charges that you're passing on to your customer. Every active subscription in Orb generates invoices throughout its lifecycle, based on the cadence of prices (most commonly monthly). Unlike other billing products which only generate invoices at the _end_ of a billing period, active subscriptions in Orb have an upcoming invoice that captures accrued usage charges. This is important because hybrid billing models don't generate _static_ invoices; in fact, the current period's draft invoice is often the most important resource.
+
+Invoices consist of one or more line items, which are the individual component charges. Most invoices are generated by the subscription, and their line items correspond directly to the component prices on the Plan associated with the Subscription. Similar to other fully-featured invoicing products, invoices can be edited while in draft and may be associated with credit notes to represent invoice adjustments once they are issued.
+
+Orb is an invoicing product in addition to a billing product. Orb can deliver invoices to your customers via email, and features end-user facing invoice links to allow paying for an invoice via an integrated payment gateway such as Stripe. This functionality means that you can use Orb as a _replacement_ for the Stripe Invoicing product if desired.
+
+| Resource                                             | Description                                                                                                                              |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| [Invoicing quickstart](/guides/quickstart/invoicing) | Setting up and testing Orb's invoicing product, including the metadata to customize your invoices for your business.                     |
+| [Invoicing guide](/guides/invoicing)                 | A collection of guides to help you understand the key pieces of Invoicing functionality that Orb offers.                                 |
+| [Invoice API reference](/reference/fetch-invoice)    | Used to fetch an invoice by ID, or the upcoming invoice. Integrate this API to provide a detailed breakdown of charges to your customer. |
+
+## Object model diagram[](#object-model-diagram "Direct link to heading")
+
+<Frame>![image.png](/images/guides/core-data-model-concepts-668099eae4dc678758ff8d972764ae00.png)</Frame>

@@ -1,0 +1,32 @@
+---
+title: "Invoicing with Stripe InvoicingMapping itemsConfiguring customers"
+---
+
+If you would like to use Stripe as a payment gateway and send Orb invoices, follow the instructions [here](/guides/quickstart/invoicing#configuring-and-testing-payments) instead The following instructions are only if you would like to use Stripe Invoicing to send and manage invoices.
+
+## Prerequisites:[](#prerequisites "Direct link to heading")
+
+1. Stripe account with Invoicing enabled
+
+## Connecting Stripe with Orb[](#connecting-stripe-with-orb "Direct link to heading")
+
+Note: if you’re already using Stripe as a payment gateway, you can skip this step, since the connection already exists.
+
+1. In the Orb dashboard, click the dropdown menu on the bottom left and navigate to Organization settings, navigate to the “Connections” tab of the modal, and select Connect to Stripe
+2. Follow the instructions to connect Stripe
+
+Mapping items to products in Stripe is required for the integration to succeed. If you do not map items, invoices will fail to issue.
+
+In Stripe, items are called Products, and can be found by searching for the [product catalog](https://dashboard.stripe.com/products?active=true). Create a product in Stripe for every item that you are selling in Orb. If you’d like Orb to also pull back any tax information from Stripe, select a tax treatment for the items.
+
+Then, navigate to the Items tab in Orb under Settings, and select a Stripe item for each Orb item. 
+
+![image.png](/images/guides/invoicing/invoicing-integrations/stripe-mappings-ef84511213e4ccd9820af34c08b3b01f.png)
+
+When creating or updating customers in the Orb UI, select Stripe as the Payment Provider in order to view a list of previously created customers in your Stripe account. 
+
+Customer mappings can also be configured in the API, by passing in the customer’s Stripe ID under `payment_provider_id`, and setting `payment_provider` to `stripe_invoice`. Note that the payment provider here is `stripe_invoice`. If you instead pass `stripe_charge`, we will use Stripe as a payment gateway, and not as an invoicing provider. 
+
+The customer’s Stripe ID can be found on the customer page, and starts with the prefix `cus_`.
+
+Once mappings are configured, invoices for customers with a Stripe payment provider ID will be synced to Stripe Invoicing.

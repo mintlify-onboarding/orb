@@ -1,0 +1,35 @@
+---
+title: "Error response format"
+description: "Orb's error response format follows [RFC7807](https://datatracker.ietf.org/doc/html/rfc7807). Each error response includes:"
+---
+
+* `status`: Same as the HTTP status code
+* `title`: Brief description of the error message
+* `type`: URI that always links to this document for further reference
+* `detail`: Human readable description providing more insight into the error
+
+Note that error responses may include other keys specific to the error.
+
+```json
+{
+    "detail": "Could not find a resource of type Plan with identifier: DBhwNcMNfYgeBpn.",
+    "status": 404,
+    "title": "A specified resource was not found.",
+    "type": "https://docs.withorb.com/reference/error-responses#404-resource-not-found"
+}
+
+```
+
+The following table describes the error types. If you are processing an error programatically, consider using the `type` URI along with the status code. The `type` URI is a stable identifier for the class of error.
+
+| Title                       | Status code | Description                                                                                                                                                                                      | type uri                                                                           |
+| --------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| Authentication failure      | 401         | Your request did not provide a valid or well-formatted API key.                                                                                                                                  | https://docs.withorb.com/reference/error-responses#401-authentication-error        |
+| Request validation error    | 400         | A request that fails validation will return human-readable information about what went wrong. The error response for this includes an array of validation\_errors.                               | https://docs.withorb.com/reference/error-responses#400-request-validation-errors   |
+| Duplicate resource creation | 400         | Returned when the ID passed to the creation request already exists.                                                                                                                              | https://docs.withorb.com/reference/error-responses#400-duplicate-resource-creation |
+| Resource not found          | 404         | This is returned when a provided identifier does not map to a resource that is accessible by the current account.                                                                                | https://docs.withorb.com/reference/error-responses#404-resource-not-found          |
+| Feature not available       | 404         | Returned when the endpoint or feature is behind a feature flag on the server-side and is unavailable for current use.                                                                            | https://docs.withorb.com/reference/error-responses#404-feature-not-available       |
+| URL not found               | 404         | Returned when the requested URL was not found on the server.                                                                                                                                     | https://docs.withorb.com/reference/error-responses#404-url-not-found               |
+| Resource conflict           | 409         | Returned when the request conflicts with another concurrent request that is using the same idempotency key or if the same idempotency key has been used for a request with different parameters. | https://docs.withorb.com/reference/error-responses#409-resource-conflict           |
+| Too many requests           | 429         | Returned when the request rate exceeds the limit.                                                                                                                                                | https://docs.withorb.com/reference/error-responses#429-too-many-requests           |
+| Internal Server error       | 500         | This is an internal server crash. The Orb team has been notified!                                                                                                                                | https://docs.withorb.com/reference/error-responses#500-internal-server-error       |

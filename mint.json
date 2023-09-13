@@ -4,38 +4,70 @@
       "light": "/logo/light.png",
       "dark": "/logo/dark.png"
     },
-    "favicon": "/favicon.png",
+    "favicon": "/favicon.svg",
     "colors": {
       "primary": "#7e57e8",
       "light": "#9A75FF",
       "dark": "#7e57e8"
     },
     "topbarCtaButton": {
-      "name": "",
-      "url": ""
+      "name": "Login",
+      "url": "https://app.withorb.com/"
     },
     "topbarLinks": [
       {
-        "name": "",
-        "url": ""
+        "name": "Changelog",
+        "url": "https://changelog.withorb.com/"
       }
     ],
     "anchors": [
       {
-        "name": "",
-        "icon": "",
-        "url": ""
+        "name": "Blog",
+        "icon": "newspaper",
+        "url": "https://www.withorb.com/blog"
+      },
+      {
+        "name": "Changelog",
+        "icon": "megaphone",
+        "url": "https://changelog.withorb.com/"
       }
+    ],
+    "tabs": [
+        {
+            "name": "API Reference",
+            "url": "api-reference"
+        }
     ],
     "navigation": [
       {
-        "group": "",
-        "pages": [""]
+        "group": "Welcome to Orb",
+        "pages": ["guides/introduction"]
+      },
+      {
+        "group": "Core Concepts",
+        "pages": [
+            "guides/concepts",
+            {
+                "group": "Quickstart Guide",
+                "pages": [
+                    "guides/quickstart/ingest",
+                    "guides/quickstart/metrics"
+                ]
+            }
+        ]
+      },
+      {
+        "group": "API Reference Introduction",
+        "pages": [
+            "api-reference/request-idempotency",
+            "api-reference/pagination",
+            "api-reference/error-response-format"
+        ]
       }
     ],
     "footerSocials":
       {
-          "twitter": "",
-          "linkedin": ""
+          "twitter": "https://twitter.com/useorb",
+          "linkedin": "https://www.linkedin.com/company/orbhq/"
       }
   }

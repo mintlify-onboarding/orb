@@ -1,0 +1,25 @@
+---
+title: "Share the invoice and customer portal"
+---
+
+Orb generates a signed, expiring URL to an _invoice portal_ and a signed, non-expiring URL to a _customer portal_. The invoice portal link, by default, expires after 30 days. The customer portal doesn't expire, but can be configured to expire if necessary. These portals can be directly accessed by your customers and are symmetrical to the internal version of the Orb invoice and a full view of a customer's invoices and current usage respectively, reflecting Orb’s philosophy around transparency in the customer relationship.
+
+These portals can serve as an out-of-the-box tool for displaying a complete view of the upcoming bill for your customer and the history of all invoices alongside their payment status. There are multiple ways to integrate this information in your app:
+
+1. You can directly embed the invoice portal for an individual invoice using an iFrame in your application.
+2. You can extract details from the invoice resource programmatically and build a custom experience on top of the invoice data. Orb also exposes the cost and usage APIs for the day by day graphs for each metric in the plan.
+3. The invoice and customer resources expose the signed resource link directly, allowing you to link to the Orb-hosted portals from your app.
+
+![invoice-portal.png](/images/guides/invoicing/invoice-portal-11eb4f069b2467eb7624b91cbb635cce.png)
+
+## Portal payments[](#portal-payments "Direct link to heading")
+
+The invoice and customer portal embed a form from the payment gateway that allows your user to pay invoices manually. This payment option can be configured to optionally save the payment method to the customer, and can be restricted to specific payment types (e.g. configuring invoices to only be payable via ACH).
+
+![invoice-portal.png](/images/guides/invoicing/customer-portal-a2604af7338c666b9ca4ebbdcd5ac895.png)
+
+## Expiring links[](#expiring-links "Direct link to heading")
+
+By default, the signed link for the invoice portal expires 30 days after the invoice due date and is delivered to your customers in the invoice email (see [Email delivery](/guides/invoicing/deliver)). This link can be refreshed at any time through the portal or revoked for any reason. A single link can be active for an invoice at a time.
+
+![revoke-link.png](/images/guides/invoicing/revoke-link-ffb7c1ffc76d9fe1c71876636553d2ec.png)

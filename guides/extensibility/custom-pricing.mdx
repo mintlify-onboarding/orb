@@ -1,0 +1,41 @@
+---
+title: "Deploy a custom price"
+---
+
+Orb is a uniquely _extensible_ billing platform, supporting any usage-based business. With this focus, Orb allows you to _deploy your business model_ onto its data infrastructure, rather than limiting your implementation to a pre-defined set of constraints determined by our product roadmap.
+
+## Custom pricing platform[](#custom-pricing-platform "Direct link to heading")
+
+Orb natively provides an array of standard pricing models which are common across a wide range of usage-based businesses. These vary in complexity, from a linear unit price per quantity of usage to a _tiered_ model, where a marginal unit can be cheaper than previous units.
+
+When the pre-built models do not suffice, you can use Orb’s custom pricing platform to implement your own pricing model. Conceptually, a pricing function is anything which translates a quantity value like _number of API calls_ to an amount that can be charged. These pricing functions are often unique to your customer relationship, and it can be a point of friction when your billing provider does not provide support for how you bill your customers. The input to a pricing function is usually a single aggregate value over a timeframe (e.g. a billing period), but some pricing functions require a value _per event_ in order to calculate an overall amount.
+
+Suppose our business offers storage services, and we want to charge our customers a different price based on their utilization, with the caveat that we’d like to enforce a _maximum_ price which is different per tier. We’ll call this model the _capped tiers_ model. Here’s how an specific pricing configuration might look for _capped tiers_:
+
+| Total storage utilization | Price per gb-hr | Maximum total price |
+| ------------------------- | --------------- | ------------------- |
+| **0 Gb-hr - 20 Gb-hr**    | $5              | $50                 |
+| **20 Gb-hr - 100 Gb-hr**  | $3              | $100                |
+| **100 Gb-hr +**           | $2              | $300                |
+
+Note that the notion of a _maximum price per tier_ is not part of the pre-built tiering model with Orb, and in other billing systems you would not be able to implement _capped tiers_. To implement this custom model in Orb, two steps are required.
+
+First we determine the _configuration_ parameters for the pricing structure and the corresponding schema. Since we’d like to be able to set up many different prices which all conform to the capped tiers _schema_, we need to allow configuring a flexible number of tiers and two parameters per tier: the unit price, and a maximum total price. Orb has first-class UI and schema constructs in the pricing platform for the “tier” concept, which provide out of the box data entry validation for tier ranges.
+
+We then need to _implement_ the pricing function given a quantity and the price’s configuration parameters. In this case, simple pseudocode might look like:
+
+```
+def price(quantity: Decimal, capped_tiers_config: Config) -> MonetaryAmount:
+        descending_tier_configs = sorted(capped_tiers_config.tier_configs, key=tier_config.min, reverse=True)
+        for tier_config in descending_tier_configs:
+             if quantity >= tier_config.min:
+                 return min(tier_config.max_total, tier_config.unit_price * quantity)
+        return 0
+
+```
+
+Once this pricing model has been deployed on to the platform, it’s treated like a pre-built pricing function:
+
+1. The pricing model is available for existing and new plans, and is configurable via the Orb UI. For the example above, non-technical users could create and modify plans with custom tier configurations without any other setup.
+2. Similar to any other price, a custom price’s configuration can be modified when creating a subscription to represent custom deals.
+3. Orb will run your pricing function code to generate alerts as well as usage graphs for each Customer.

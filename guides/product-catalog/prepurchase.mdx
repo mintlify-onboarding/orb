@@ -1,0 +1,73 @@
+---
+title: "Configure prepurchase"
+---
+
+In contrast to the in-arrears model of billing, where usage is invoiced at the end of a billing cycle after costs have been incurred, Orb supports deducting from a prepaid balance as usage occurs.
+
+Prepaid credits are designed with the following principles:
+
+* **Real-time**: By default, Orb reflects changes to the balance as soon as events are ingested, with minimal latency. Depending on your desired deduction behavior, deductions to the balance can be configured to happen less frequently (e.g. if an hour’s worth of events are required before a deduction takes place).
+* **Auditable**: Through a powerful ledger abstraction, Orb provides a trace of every change to the customer balance, down to each event and its contribution.
+* **Immutable**: Orb provides an append-only ledger of transactions that affect the balance, which are immutable once finalized. Orb is able to accommodate late and out-of-order event reporting by allowing _pending_ transactions for a fixed reporting grace period.
+
+## Structure of the balance[](#structure-of-the-balance "Direct link to heading")
+
+Each customer has a balance in one or more _currency units_, which could be a custom currency (“Acme Inc. credits”) or a real-world currency (e.g. “USD”). Structurally, the balance consists of blocks, which are initialized with an `amount` and `expiry_date`. At any given time, the total balance for a customer is the sum of the remaining amount in their unexpired credit blocks.
+
+### Cost basis[](#cost-basis "Direct link to heading")
+
+Each balance block also tracks an optional _cost basis_, which can help you track the original amount your customer paid for that balance. For example, a trial balance that is provided upon provisioning might have a cost basis of $0, whereas regular balance bought during the course of the customer lifecycle might have a cost basis of $50 per unit. Providing the cost basis enables Orb's [Revenue Reporting](/guides/revenue-reporting/revenue-recognition) functionality, which allows you to understand how your revenue is utilized over time.
+
+## Payment for balance[](#payment-for-balance "Direct link to heading")
+
+Orb provides a single API to both charge customers via a connected payment provider (e.g. Stripe) _and_ increment a customer's balance. This is useful for several reasons:
+
+* Provides a single action for triggering payment, avoiding inconsistent and tedious integrations with multiple payment providers.
+* Eliminates possible inconsistency and revenue reporting issues by ensuring that balance is available for customer use _as soon as_ revenue is received. Without this functionality, if balance is added after payment is booked, end-of-month revenue recognition can be difficult or prone to errors.
+* Uses Orb metadata to directly tie an _increment_ ledger entry to a payment provider action.
+
+### Automatic top-ups[](#automatic-top-ups "Direct link to heading")
+
+When configured, Orb can _automatically_ refill a customer's balance and issue a corresponding charge. This can either happen on a standardized recurring basis (e.g. the 1st of every month), or when the balance is depeleted past a certain minimum threshold. In both cases, configuration requires specifying an _increment amount_ and a per-unit cost basis to determine the amount to charge.
+
+## Prepaid ledger[](#prepaid-ledger "Direct link to heading")
+
+For prepaid subscriptions, Orb provides a ledger abstraction that acts as a log of a customer's balance over time. A ledger entry always indicates the starting and ending balance, as well as the time at which the transaction took place.
+
+New ledger entries are added in the following scenarios:
+
+* **Automatic deductions**: When usage is ingested, Orb will automatically deduct an amount from the balance if appropriate. To determine how much an incremental event should deduct from the balance, Orb uses both the billable metric (this determines the _quantity of usage_ implied by the event) and its associated price (which determines the _amount_ based on the quantity). If the deduction is triggered by a single usage event, automatic deductions are tagged with an `event_id` and `price_id`.
+* **Manual increments & decrements**: Through the Orb web app and API, you can manually add blocks from the balance (optionally specifying metadata like an expiry date), or deplete it. To allow tracing these manual operations, Orb keeps track of the user or key that initiated the action, and also provides a `description` field for business-specific attribution.
+* **Block expiration**: When a block expires because its expiry date has passed, the balance is automatically depleted by the remaining `amount` in the newly expired block.
+* **Expiry changes**: It’s possible to change the expiration of all or part of a block manually; this will show up as a ledger entry but will not change the overall balance amount.
+
+### Pending and committed ledger entries[](#pending-and-committed-ledger-entries "Direct link to heading")
+
+Events may be reported to Orb out of order and with significant lag, meaning that the reporting time does not necessarily match the `timestamp`, which is the time the usage occurred. To account for this, Orb maintains _pending_ ledger entries until the [reporting grace period](/guides/events-and-metrics/reporting-errors#reporting-grace-period) has passed. After this point, Orb _commits_ the entry, making it immutable.
+
+This is important to the fidelity of the ledger because the ordering of operations can have a significant impact to the balance. For example, if an event with `timestamp = 2022-02-02T23:00:00` is reported 10 hours later and a block expires at `timestamp = 2022-02-03T00:00:00`, Orb will automatically create the deduction ledger entry for the event _before_ the block expiry, properly allowing it to deduct balance from an eligible block.
+
+### Exporting the ledger[](#exporting-the-ledger "Direct link to heading")
+
+In the admin web application, Orb provides a detailed ledger view. This view can be accessed from any customer page by clicking "View full credit ledger", and the ledger can be drilled down to specific operations, actors that took the action, and a cost basis threshold.
+
+This view also supports exporting these ledger entries to CSV format, which can be useful for further investigation or digging.
+
+![credits_ledger.png](/images/guides/product-catalog/credit-ledger-68e86b31608f67dd3f5387d556fe6d0b.png)
+
+## Amendments to the balance[](#amendments-to-the-balance "Direct link to heading")
+
+In cases where manual adjustments need to be made to a customer’s balance, you can use manual increments and decrements. This is useful in cases such as:
+
+* Providing extra credits for trial purposes so that your customer has more usage to evaluate your offering
+* Compensating for downtime or reporting errors by adding a fixed amount to the balance
+
+In addition to these one-off adjustments, the prepaid balance will also reflect changes when historical usage is amended. For example, if you use Orb’s amendment functionality to overwrite events that previously led to balance deductions, Orb will automatically add or decrement credits to account for the difference between old and new events.
+
+## Amendments to revenue recognition[](#amendments-to-revenue-recognition "Direct link to heading")
+
+In cases where the customer requests a refund or in the case of a data input error, Orb supports amending the credit ledger in a manner that also maintains the consistency of the downstream [revenue recognition workflows](/guides/revenue-reporting/revenue-recognition#prepurchase-revenue).
+
+For refunding a credit increment to your customer, Orb supports refunding a credit block via the "Void credits" operation on the dashboard and selecting the "Mark as refund" option. These show up in the ledger as "Refund" operations.
+
+For voiding a credit increment due to a potential client issue or data input error, Orb supports voiding a credit block via the "Void credits" operation and not selecting the "Mark as refund" option. These show up in the ledger as "Void" operations.

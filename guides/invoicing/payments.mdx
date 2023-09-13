@@ -1,0 +1,37 @@
+---
+title: "Configure payments and collection"
+---
+
+Orb integrates with payment gateways like Stripe for processing payment for the amount due on the invoice. Structurally, Orb maps an Orb customer to a customer at the gateway, and can automatically pull in the payment information from the mapped customer. When auto collection is enabled for a customer or subscription, Orb will attempt to charge the linked (payment gateway) customer’s default payment method at the _due date_ of the invoice.
+
+In Orb, the due date and the auto-collection behavior are decoupled, enabling the following possible behaviors:
+
+* An invoice can be due on issue and have auto-collection enabled, allowing you to immediately collect payment at the end of the billing period.
+* An invoice can be due with delayed net-terms (e.g. 30 days), allowing you to collect payment in the following month. In this case, the invoice will still be delivered to your customer when it’s issued, so payment may be received beforehand.
+* An invoice or customer may have auto-collection disabled, in which case the customer will be liable for inputting payment on the invoice portal manually.
+
+### Configuring terms and collection behavior[](#configuring-terms-and-collection-behavior "Direct link to heading")
+
+The due date of an invoice is determined by its ‘net terms’, which represents a day offset from the invoice date. This property is set on each _plan_, but can be changed when creating a subscription to the plan for an individual customer. It’s common for enterprise customers to have extended terms (e.g. 30 or 60 days) and self-serve customers to have invoices that are due on issue (which reflects a net-terms value of 0). Orb also allows you to change the due date directly on a specific invoice if required, and set it individually when issuing an invoice that’s not tied to a subscription.
+
+Unlike net-terms behavior, auto collection can be configured on a per-customer basis. If a customer is initialized with a linked payment provider customer, auto-collection is turned on by default, but can be manually disabled. Similarly, if a customer is later linked to a payment provider customer, auto-collection is automatically enabled. As with net-terms, auto-collection can be turned off for individual invoices.
+
+![payment-terms.png](/images/guides/invoicing/payment-terms-3ef2686a8466f4b8658cf5b2083737ab.png "Configuring payment terms on plans")
+
+### Payment methods[](#payment-methods "Direct link to heading")
+
+Orb continually synchronizes the ‘default’ payment method from the payment gateway in order to display this information on the Orb customer page. The payment method used for an invoice is also displayed on the invoice itself, and ‘frozen’ when the invoice is paid to reflect the transaction that occurred. Orb’s support for available payment instruments inherits from what’s available at the payment gateway — for example, with Stripe, Orb can process ACH/bank transfers as well as credit card payments.
+
+![customer-details-acme.png](/images/guides/invoicing/customer-details-acme-b550edc2106e0b13f8655e9bb304a742.png "Customer details with payment method and collection behavior")
+
+### Dunning behavior[](#dunning-behavior "Direct link to heading")
+
+If auto collection is enabled and the invoice cannot be collected for the configured payment method, Orb will automatically retry the charge after 1, 4, and 9 days from the initial payment attempt.
+
+Orb also retries payments intelligently when they’re most likely to succeed. If the linked customer at the payment gateway does not have a payment method set, Orb will not attempt to create a dunning schedule. However, any time a payment method is initially set or changed from a previous method, Orb will immediately try to collect on the invoice even if the invoice is not eligible for the next retry as per the dunning schedule. This ensures that payment recovery happens immediately.
+
+![payment-failed.png](/images/guides/invoicing/payment-failed-b30a94088c6deb7ae21d02a21fd5ffb6.png "Failed payments retry on payment method changes")
+
+## Tax configuration[](#tax-configuration "Direct link to heading")
+
+Refer to the [tax automation integrations](/guides/integrations-and-exports/tax) documentation to learn how to use an automated tax provider to enrich your invoices with tax information.

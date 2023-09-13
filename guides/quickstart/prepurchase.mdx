@@ -1,0 +1,90 @@
+---
+title: "Use prepurchase balance"
+---
+
+This guide assumes you’ve already set up metrics, created a few test customers, and contacted the Orb team to enable prepurchase in your account. You should also read the [prepurchase guide](/guides/product-catalog/prepurchase) for an overview of the feature and to understand if prepurchase makes sense for your pricing model.
+
+In this guide, we’re going to guide you through the basic actions of working with prepurchase: how to add credits, use credits, see credit balances, and act on depleted credit balances.
+
+## Loading in trial credits[](#loading-in-trial-credits "Direct link to heading")
+
+Trial credits are free credits you might offer your user to try out your product. Let’s add some trial credits for a customer we’ve created:
+
+1. Ensure you’re in test mode
+2. Navigate to a customer’s page
+3. In the `Credits` section, click `Adjust credits`
+4. Fill in an amount and $0.00 for the cost basis  
+   1. Cost basis refers to how much the user paid for these credits
+5. Optionally add an expiry date and description, and click Save
+6. Click `View full credit ledger` in the Credits section to see this credit increment and all future changes to the customer’s prepurchase balance Setting up prices to use prepurchase
+
+When you create a plan, you will decide which prices in the plan burn down from the prepurchase balance. Not all prices in a plan need to use prepurchase. Let’s create a new plan with a price that uses prepurchase:
+
+1. Navigate to the plan creation flow
+2. Select a primary currency (ex. USD) and click “Enable credits”  
+   1. Enter a “Credit price per unit”. This is the amount per credit in the primary currency that will be charged on the invoice at the end of the billing period if a customer goes over their prepurchase balance.
+3. Add a usage based price using the billable metric you created, and specify `Credits` as the price currency
+4. Add a fixed fee price and specify the primary currency (ex. USD) as the price currency
+
+Now, when you subscribe a customer to this plan and stream in usage events, you should see deductions in the credit ledger view or via this API endpoint for the usage-based price. The customer’s invoice should show the fixed fee.
+
+## Loading in paid credits and invoicing[](#loading-in-paid-credits-and-invoicing "Direct link to heading")
+
+When a customer pays for a block of prepurchase, you can use the Adjust credits UI as described above to add paid credits. The differences compared to trial credits are:
+
+1. Specify a real, non-$0 cost basis for the credit block. This is how much the user paid for a single credit.  
+   1. This is important later on when your finance team needs to pull revenue numbers.
+2. Check the `Create an invoice for this purchase` button, specify when you want the invoice to be due, and an optional memo.
+
+Programatically, you can use the `Add credit ledger entry` endpoint (docs) to load in trial and paid credits, and to invoice for paid credits.
+
+## Running out of credit balance[](#running-out-of-credit-balance "Direct link to heading")
+
+When a customer runs out of credit balance, any excess usage they incur will be charged at the end of the month on the invoice. Instead, you might want to block customers from using your product until they do that. To do that, set up an alert:
+
+1. Navigate to the customer’s page
+2. In the Credits section, click `Manage alerts`
+3. Add an alert for balance depleted if you want an alert when the customer’s credit balance reaches 0, or balance dropped if you want a non-zero threshold.
+
+Now, Orb will emit a `customer.credit_balance_depleted` or `customer.credit_balance_dropped` webhook anytime the customer’s credit balance goes below the specified threshold.
+
+To quickly test that the webhook is working, you can:
+
+1. Click “Adjust credits” in the Credits section
+2. Change the Adjustment type to “Subtract credits”
+3. Enter the amount as the current credit balance for the customer, and hit Save
+
+You should receive a balance depleted or dropped webhook, depending on the alert you configured.
+
+## Periodically topping up credits[](#periodically-topping-up-credits "Direct link to heading")
+
+Putting all of this together, you could write a simple consumer that consumes the `credit_balance_dropped` webhook and automatically bills your customer for 100 credits.
+
+An example, using Flask:
+
+```
+    from flask import Flask, request
+    import hmac
+    from hashlib import sha256
+    import requests
+
+    app = Flask(__name__)
+
+    # Example Using Flask
+    @app.route('/webhook-handler', methods=['POST'])
+    def handle_webhook():
+        # parse webhook JSON
+        webhook_event = request.json
+
+        if webhook_event is None:
+            # could not parse request
+            return ('Unable to parse notification.', 400)
+        # Validate signatures, see webhooks documentation
+        if webhook_event["type"] == "customer.credit_balance_dropped":
+          customer_id = webhook_event["customer"]["id"]
+          request_data = {"entry_type": "increment", "amount": 100, "per_unit_cost_basis": "2.50", "invoice_settings": {"auto_collection": True, "net_terms": 0}}
+          response = requests.post(url=f"https://api.withorb.com/v1/customers/{customer_id}/credits/ledger_entry", data=request_data, headers={"Bearer": <YOUR_API_KEY>})
+
+        return ('Successfully processed webhook!', 200)
+
+```

@@ -1,0 +1,17 @@
+---
+title: "Adjust draft invoices"
+---
+
+To accommodate cases where an invoice needs to be edited manually, Orb has a powerful adjustments workflow. Adjustments on a draft invoice can be used to add additional fixed fees, change discounts/minimums, and edit existing line items.
+
+You can use adjustments on an Orb invoice to:
+
+1. Capture a one-off charge that’s not part of a recurring contract. For example, this may be required to capture support hours that need to be billed adhoc.
+2. Increase the discount on the invoice to reflect a mistake in how usage was reported to Orb, or because of an out-of-band conversation with your customer.
+3. Remove a contracted minimum to reflect a delayed integration cycle where the customer isn’t fully onboarded onto your platform.
+
+![edit-pro-cloud.png](/images/guides/invoicing/edit-pro-cloud-2-0bd1b8e932b685ec46c0c489243a9a13.png)
+
+Once an invoice has been adjusted, the line items, subtotal, and total are immediately updated to reflect the change. By default, invoice adjustments are visible your users in the invoice portal as well as the internal view of the invoice.
+
+Note that there are cases where invoice adjustments may not persist in light of manual actions taken. Specifically, when a subscription is cancelled, Orb generates a _new_ invoice rather than modifying the existing one since the invoice may now only contain a subset of the line items (e.g. no in-advance fee for the upcoming billing period). In this case, any adjustments already made to the upcoming invoice will not be carried over.

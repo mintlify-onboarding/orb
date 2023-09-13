@@ -1,0 +1,235 @@
+---
+title: "Build workflows with webhooks"
+---
+
+In order to notify your system of asynchronous actions within the Orb platform, Orb provides a powerful, real-time webhooks system that can issue calls to an endpoint of your choosing when certain events take place. Webhooks allow your system or integration to take actions as a result of these events.
+
+Orb's supported webhook events can be useful for a wide variety of use cases:
+
+1. **Resource lifecycle changes**: Set up entitlements in your service as a result of object creation, such as a `subscription.created` event
+2. **Usage patterns**: Alert internal teams when a specific usage threshold is hit in a billing period, or when Orb detects an anomalous usage pattern for a customer based on historical patterns.
+3. **Balance events**: Send out an end-user email when a customer's pre-paid credit balance is nearing zero
+
+Webhooks payloads in Orb follow the format:
+
+```
+{
+    // Unique to this WebhookEvent resource, and can be used for idempotency (process-once) purposes
+    "id": string,
+    // ISO8601 `created_at` timestamp of the `WebhookEvent` resource
+    "created_at": string,
+    // Identifies the type of webhook event being triggered
+    "type": string,
+    // Each webhook is attached to a resource, and the full resource is serialized
+    // in the webhook body.
+    "<resource_name>": object,
+    // Additional properties specific to this event
+    "properties": object,
+}
+
+```
+
+## Configuring webhooks[](#configuring-webhooks "Direct link to heading")
+
+Webhooks are configured to an `HTTPS` URL on your backend server (note that only the `HTTPS` scheme is accepted for the production version of your webhook configuration).
+
+Each webhook endpoint is associated with a _secret_ (see the `X-Orb-Signature` clause below). By default, all webhook events are sent to every endpoint.
+
+## Debugging webhooks[](#debugging-webhooks "Direct link to heading")
+
+In the Orb UI, you can test your webhook configuration to ensure that it's set up properly and ready to receive events from us. From the [webhooks portal](https://app.withorb.com/webhooks), you can select on any webhook endpoint to send a "test event."![webhook-test.png](/images/guides/integrations-and-exports/webhook-test-fe5780376c727725379b9f579e4e9771.png)
+
+If you need to manually trigger a webhook event to be sent to your server, you can also resend it in the UI.![resend-webhook.png](/images/guides/integrations-and-exports/resend-webhook-0aad1fb15f052ec3f8c65075a2f369e1.png)
+
+## Webhooks retries[](#webhooks-retries "Direct link to heading")
+
+Orb guarantees _at least one_ delivery for a single webhook event to each of your endpoint.
+
+The Orb expects a `2xx` as a successful status code in response to a webhook POST. If the request returns an error or otherwise times out, Orb will attempt to retry the event on the following retry schedule, stopping when either retries are exhausted or the request is accepted:
+
+* 5 seconds
+* 5 minutes
+* 30 minutes
+* 2 hours
+* 5 hours
+* 10 hours
+* 10 hours
+
+In order for your system to handle duplicate notifications, we recommend storing the `id` of a webhook event temporarily in the webhook consumer and refusing to re-process an event if the same `id` has already been seen.
+
+## Webhook Event Types[](#webhook-event-types "Direct link to heading")
+
+Event types follow the pattern `<resource_name>.<verb>`, where `<resource_name>` is the root object that is related to the webhook, and the `<verb>` is the event that has taken place (e.g. `customer.created` is a newly created [Customer](/guides/concepts#customer) resource).
+
+By convention, a key in the payload will match the `resource_name` prefix in `type` (e.g. if the `type` is`subscription.action`, the payload will contain the serialized subscription resource under the `subscription` key).
+
+Orb currently issues the following webhooks:
+
+### customer.created[](#customercreated "Direct link to heading")
+
+Issued when a customer resource is created.
+
+| key        | schema                                |
+| ---------- | ------------------------------------- |
+| customer   | [Customer](/reference/fetch-customer) |
+| properties | {}                                    |
+
+### customer.edited[](#customeredited "Direct link to heading")
+
+Issued when a customer is edited. The `previous_attributes` object will be present and populated with the previous state of any `Customer` attributes that have changed.
+
+| key                                                   | schema                                |
+| ----------------------------------------------------- | ------------------------------------- |
+| customer                                              | [Customer](/reference/fetch-customer) |
+| properties.previous\_attributes.payment\_provider     | string                                |
+| properties.previous\_attributes.payment\_provider\_id | string                                |
+| properties.previous\_attributes.auto\_collection      | boolean                               |
+| properties.previous\_attributes.email                 | string                                |
+| properties.previous\_attributes.name                  | string                                |
+| properties.previous\_attributes.email\_delivery       | boolean                               |
+| properties.previous\_attributes.metadata              | object                                |
+| properties.previous\_attributes.tax\_id               | [TaxId](/reference/fetch-customer)    |
+| properties.previous\_attributes.shipping\_address     | [Address](/reference/fetch-customer)  |
+| properties.previous\_attributes.billing\_address      | [Address](/reference/fetch-customer)  |
+
+### customer.credit\_balance\_depleted[](#customercredit%5Fbalance%5Fdepleted "Direct link to heading")
+
+Issued when a customer's prepaid credits balance is depleted.
+
+| key        | schema                                |
+| ---------- | ------------------------------------- |
+| customer   | [Customer](/reference/fetch-customer) |
+| properties | {}                                    |
+
+### customer.credit\_balance\_dropped[](#customercredit%5Fbalance%5Fdropped "Direct link to heading")
+
+Issued when a customer's prepaid credits balance is depleted to a configured threshold.
+
+| key                           | schema                                |
+| ----------------------------- | ------------------------------------- |
+| customer                      | [Customer](/reference/fetch-customer) |
+| properties.balance\_threshold | string                                |
+
+### subscription.created[](#subscriptioncreated "Direct link to heading")
+
+Issued when a subscription resource is created.
+
+| key          | schema                                        |
+| ------------ | --------------------------------------------- |
+| subscription | [Subscription](/reference/fetch-subscription) |
+| properties   | {}                                            |
+
+### subscription.started[](#subscriptionstarted "Direct link to heading")
+
+Issued when a subscription begins.
+
+| key          | schema                                        |
+| ------------ | --------------------------------------------- |
+| subscription | [Subscription](/reference/fetch-subscription) |
+| properties   | {}                                            |
+
+### subscription.fixed\_fee\_quantity\_updated[](#subscriptionfixed%5Ffee%5Fquantity%5Fupdated "Direct link to heading")
+
+Issued when a subscription's fixed fee quantity has been updated.
+
+| key                        | schema                                        |
+| -------------------------- | --------------------------------------------- |
+| subscription               | [Subscription](/reference/fetch-subscription) |
+| properties.old\_quantity   | number                                        |
+| properties.new\_quantity   | number                                        |
+| properties.effective\_date | date-time                                     |
+| properties.price\_id       | string                                        |
+
+### subscription.ended[](#subscriptionended "Direct link to heading")
+
+Occurs whenever a customer’s subscription ends/lapses.
+
+| key          | schema                                        |
+| ------------ | --------------------------------------------- |
+| subscription | [Subscription](/reference/fetch-subscription) |
+| properties   | {}                                            |
+
+### subscription.plan\_changed[](#subscriptionplan%5Fchanged "Direct link to heading")
+
+Issued when a subscription transitions from one plan to a different plan.
+
+| key                           | schema                                        |
+| ----------------------------- | --------------------------------------------- |
+| subscription                  | [Subscription](/reference/fetch-subscription) |
+| properties.previous\_plan\_id | string                                        |
+
+### subscription.usage\_exceeded[](#subscriptionusage%5Fexceeded "Direct link to heading")
+
+Issued when a billable metric in a subscription exceeds a pre-configured quantity threshold.
+
+| key                             | schema                                        |
+| ------------------------------- | --------------------------------------------- |
+| subscription                    | [Subscription](/reference/fetch-subscription) |
+| properties.billable\_metric\_id | string                                        |
+| properties.timeframe\_start     | date-time                                     |
+| properties.timeframe\_end       | date-time                                     |
+| properties.quantity\_threshold  | number                                        |
+
+### subscription.cost\_exceeded[](#subscriptioncost%5Fexceeded "Direct link to heading")
+
+Issued when a billable metric in a subscription exceeds a pre-configured quantity threshold.
+
+| key                          | schema                                        |
+| ---------------------------- | --------------------------------------------- |
+| subscription                 | [Subscription](/reference/fetch-subscription) |
+| properties.timeframe\_start  | date-time                                     |
+| properties.timeframe\_end    | date-time                                     |
+| properties.amount\_threshold | number                                        |
+
+### invoice.issued[](#invoiceissued "Direct link to heading")
+
+Issued when an invoice transitions to the `"issued"` state. `"issued"` invoices are frozen (they cannot be edited, manually or via the API). The `automatically_marked_as_paid` property will be true when the issued invoice's amount due is zero, which results in the invoice status being set to paid.
+
+| key                                        | schema                              |
+| ------------------------------------------ | ----------------------------------- |
+| invoice                                    | [Invoice](/reference/fetch-invoice) |
+| properties.automatically\_marked\_as\_paid | boolean                             |
+
+### invoice.payment\_failed[](#invoicepayment%5Ffailed "Direct link to heading")
+
+Issued when automated payment collection for an invoice fails for a configured payment gateway.
+
+| key                              | schema                              |
+| -------------------------------- | ----------------------------------- |
+| invoice                          | [Invoice](/reference/fetch-invoice) |
+| properties.payment\_provider     | "stripe"                            |
+| properties.payment\_provider\_id | string                              |
+
+### invoice.payment\_succeeded[](#invoicepayment%5Fsucceeded "Direct link to heading")
+
+Issued when automated payment collection for an invoice succeeds for a configured payment gateway.
+
+| key                              | schema                              |
+| -------------------------------- | ----------------------------------- |
+| invoice                          | [Invoice](/reference/fetch-invoice) |
+| properties.payment\_provider     | "stripe"                            |
+| properties.payment\_provider\_id | string                              |
+
+### invoice.edited[](#invoiceedited "Direct link to heading")
+
+Issued when a draft invoice has been edited via the webapp. The `previous_attributes` object will be present and populated with the previous state of any `Invoice` attributes that have changed.
+
+| key                                         | schema                                                  |
+| ------------------------------------------- | ------------------------------------------------------- |
+| invoice                                     | [Invoice](/reference/fetch-invoice)                     |
+| properties.previous\_attributes.amount\_due | string                                                  |
+| properties.previous\_attributes.subtotal    | string                                                  |
+| properties.previous\_attributes.total       | string                                                  |
+| properties.previous\_attributes.discounts   | array of [Discounts](/reference/fetch-coupon)           |
+| properties.previous\_attributes.minimum     | [Minimum](/reference/fetch-plan)                        |
+| properties.previous\_attributes.line\_items | array of [Invoice Line Items](/reference/fetch-invoice) |
+
+## Webhooks security[](#webhooks-security "Direct link to heading")
+
+Each webhook event sent by Orb also includes two specific headers in the request:
+
+1. `X-Orb-Timestamp`: This header represents the time that the webhook was sent from Orb. You can check this timestamp and compare it to a configured threshold in your system, in order to prevent processing of the webhook event. This can be a mitigation against [replay attacks](https://en.wikipedia.org/wiki/Replay%5Fattack) where webhook events are re-sent, causing downstream systems to behave unexpectedly.
+2. `X-Orb-Signature`: The signature header (formatted as `v1=<signature>`) is a security header which can be used to confirm that the webhook event originated from Orb. We highly recommend verifying the signature, and only processing events where the header matches the signature you generate. Since each webhook endpoint is associated with a secret, your backend server should re-compute the signature by preparing the payload and subsequently computing an HMAC with the SHA 256 function.  
+   * The `payload` for the HMAC is the literal `"v1:"` followed by the ISO format `X-Orb-Timestamp` and finally the literal `:` followed by the event message body itself.  
+   * You should use the configured secret for the endpoint URL as the signing secret for the HMAC.  
+   * When comparing to your generated HMAC, you can either prefix the literal `v1=` to compare with `X-Orb-Signature` header directly, or extract the element after `v1=` in `X-Orb-Signature` to check against your generated value.

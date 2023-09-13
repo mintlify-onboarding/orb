@@ -1,0 +1,85 @@
+---
+title: "Integrate with cloud storage"
+---
+
+Orb is able to automatically pull in events from an S3 or Google Cloud Storage bucket that's provisioned for the purposes of an event export.
+
+This is a particularly helpful option if you're executing a regular [UNLOAD](https://docs.aws.amazon.com/redshift/latest/dg/r%5FUNLOAD.html) from a data warehouse, which can directly send event rows to S3 in the required format. Note that the following instructions are for our S3 integration, but the GCS integration is similar.
+
+This S3 integration requires that events are in the shape of the ingestion API format, but Orb provides key features to make this more ergonomic:
+
+* The S3 sync client supports both `.jsonl` (new line delimited JSON) as well as `csv` formats.
+* Any top-level fields in the event row that are not a recognized field will automatically be added to the `properties` dictionary.
+* Orb supports mapping fields present in the events to API field names within the sync, avoiding manual remapping in your pipeline (e.g. if your field is called `id` but should map to Orb's `idempotency_key`)
+
+### S3 sync setup[](#s3-sync-setup "Direct link to heading")
+
+At a high-level, the S3 sync requires the ARN of two S3 buckets: an events export bucket and a dead-letter queue bucket. You must [grant a specific Orb role access](https://repost.aws/knowledge-center/cross-account-access-s3) to your events export bucket with the following policy:
+
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::970006758186:role/<ORB_PROVISIONED_ROLE>"
+            },
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::<EVENTS_EXPORT_BUCKET>"
+        },
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::970006758186:role/<ORB_PROVISIONED_ROLE>"
+            },
+            "Action": [
+                "s3:GetObject",
+                "s3:GetObjectAcl"
+            ],
+            "Resource": "arn:aws:s3:::<EVENTS_EXPORT_BUCKET>/*"
+        }
+    ]
+}
+
+```
+
+Once Orb has the ARN of the events export bucket, Orb will add permissions to a provisioned SQS queue so that the S3 bucket can write to it. Orb uses [S3 Event Notifications](https://docs.aws.amazon.com/AmazonS3/latest/userguide/NotificationHowTo.html) to listen for new files added to the bucket, and requires the `s3:ObjectCreated:*` event type which can be configured via the [AWS Console](https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-event-notifications.html). Note that this SQS queue should be in the same region as the bucket, so Orb will provide a provisioned SQS ARN once the bucket region is known.
+
+### Dead-letter queue[](#dead-letter-queue "Direct link to heading")
+
+When Orb encounters a file that cannot be parsed, or an event that contains validation errors, Orb will log any failures to the dead-letter-queue bucket to avoid blocking the rest of the event pipeline.
+
+Allow an Orb role read and write permissions for this bucket by adding a bucket policy, following the outline in this [support article](https://repost.aws/knowledge-center/cross-account-access-s3):
+
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::970006758186:role/<ORB_PROVISIONED_ROLE>"
+            },
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::<EVENTS_DLQ_BUCKET>"
+        },
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::970006758186:role/<ORB_PROVISIONED_ROLE>"
+            },
+            "Action": [
+                "s3:GetObject",
+                "s3:GetObjectAcl",
+                "s3:PutObject",
+                "s3:PutObjectAcl"
+            ],
+            "Resource": [
+                "arn:aws:s3:::<EVENTS_DLQ_BUCKET>/*"
+            ]
+        }
+    ]
+}
+
+```

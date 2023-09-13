@@ -1,0 +1,111 @@
+---
+title: "Report to cloud marketplaces"
+---
+
+Orb integrates directly with the three major cloud marketplaces: Google Cloud, AWS, and Azure. This functionality allows you to centrally manage all subscriptions and usage reporting via Orb. Integrations via Orb provide powerful benefits compared to manually metering usage to each marketplace:
+
+* **Launch quickly**: Orb has experience helping vendors with the marketplace integration process and specific recommendations to ensure that you’re not stuck waiting for approvals for your marketplace offers.
+* **Pricing flexibility**: When sending usage via Orb, you’re not limited to the pricing models offered natively by the marketplace’s billing APIs.
+* **Single interface**: Orb’s APIs provide a single integration surface area, abstracting away the details of the corresponding provider’s APIs. Our product keeps up with library updates and the different semantics of each library so you get a consistent experience.
+
+## Billing for cloud marketplaces[](#billing-for-cloud-marketplaces "Direct link to heading")
+
+By default, setting up a cloud marketplace requires that you re-build your product catalog as a vendor on each platform (i.e. list your plan and pricing information for each metric). 
+
+This approach limits your business in a few important ways:
+
+* Changing your pricing or setting up custom negotiated deals must be mediated by marketplace teams, which often _manually_ approve terms.
+* It’s difficult or impossible to achieve billing automation if your pricing model is not natively supported by the marketplace platform (e.g. tiering configurations).
+* It can be difficult to provide a consistent experience for customers when platform functionality differs.
+
+Orb _does not_ rely on cloud marketplaces for attaching pricing information to your usage. Instead, we recommend that you set up a _single_ metric when configuring your offering, which represents the **total number of cents** that you will charge a specific customer for your service. 
+
+With this metric in place, Orb is responsible for regularly reporting the costs incurred for a subscription on the basis of the pricing information in Orb.
+
+## Configuring a marketplace integration[](#configuring-a-marketplace-integration "Direct link to heading")
+
+### Azure[](#azure "Direct link to heading")
+
+Orb supports [SaaS metered billing](https://docs.microsoft.com/en-us/azure/marketplace/partner-center-portal/saas-metered-billing) via the Azure marketplace. 
+
+_Authentication_
+
+Orb authenticates to the Azure marketplace by retrieving a short-lived token when metering usage in batches. When configuring the marketplace integration, Orb requires the following information:
+
+| Requirement    | Description                                             |
+| -------------- | ------------------------------------------------------- |
+| tenantId       | Tenant ID of the registered AAD application.            |
+| client\_id     | Client/app identifier associated with the Azure AD app. |
+| client\_secret | Secret associated with the Azure AD app.                |
+
+_Required setup parameters_
+
+To prepare for the Orb integration, configure a billing dimension in Azure with the following parameters:
+
+| Marketplace property | Recommended value                                                                |
+| -------------------- | -------------------------------------------------------------------------------- |
+| Dimension identifier | This can be any identifier that you pick; we recommend usage\_charges\_in\_cents |
+| Dimension name       | Total usage charges                                                              |
+| Unit of measure      | Cents                                                                            |
+
+When configuring the marketplace connection, Orb requires the ID of a single plan that employs the above dimension, and the dimension ID.
+
+For each subscription that’s connected to Azure, configure the `resourceId` to correspond to the SaaS subscription ID.
+
+### AWS[](#aws "Direct link to heading")
+
+Orb supports metered billing through the APIs provided by [AWS Marketplace Metering](https://docs.aws.amazon.com/marketplace/latest/userguide/saas-integration-metering-and-entitlement-apis.html).
+
+_Authentication_
+
+In order to report usage for your product on your behalf, you must create a new role. When creating the new role, select the `Trusted entity type > AWS account > Another AWS account` option and provide the Orb AWS account number (`970006758186`). The role must also have the following IAM policy:
+
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+         {
+         "Action": [
+                 "aws-marketplace:ResolveCustomer",
+                 "aws-marketplace:BatchMeterUsage",
+                 "aws-marketplace:GetEntitlements"
+         ],
+         "Effect": "Allow",
+         "Resource": "*"
+         }
+    ]
+}
+
+```
+
+_Required setup parameters_ 
+
+Orb simply requires the ARN for the role you created, your AWS `ProductCode` and `Dimension` ID in order to set up reporting for your account.
+
+For each subscription that’s connected to AWS, Orb requires the AWS `CustomerId` which corresponds to the AWS customer (i.e. your buyer).
+
+### Google Cloud Marketplace[](#google-cloud-marketplace "Direct link to heading")
+
+Orb supports sending usage to Google Cloud Marketplace for [SaaS-based businesses with integrated billing](https://cloud.google.com/marketplace/docs/partners/integrated-saas/backend-integration).
+
+_Authentication_
+
+In order to report usage for your product on your behalf, Orb requires service account credentials (in JSON format) which include the following scopes:
+
+```
+servicemanagement.services.report
+servicemanagement.services.check
+
+```
+
+_Required setup parameters_ 
+
+Orb requires the following Google Cloud parameters at the account level:
+
+| Marketplace property | Description                                                           |
+| -------------------- | --------------------------------------------------------------------- |
+| partner\_id          | Assigned ID by Google for the Partner Procurement API                 |
+| service\_name        | Required for constructing the Service Control API endpoint URL        |
+| metric\_name         | The name of the metric, as listed in your service configuration file. |
+
+For each subscription that’s connected to GCP, Orb requires you to configure the `entitlementID` of the subscription, which is used as the usage reporting ID in metering calls.

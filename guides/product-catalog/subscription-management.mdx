@@ -1,0 +1,90 @@
+---
+title: "Manage subscriptions"
+---
+
+A subscription represents a Customer’s _recurring purchase_ of a plan.
+
+![subscription_detail_page.png](/images/guides/product-catalog/subscription-detail-page-330ca8350f8389c660b257859499852d.png)
+
+## Subscription lifecycle[](#subscription-lifecycle "Direct link to heading")
+
+A subscription’s **term** is the length of time which determines its renewal cadence, determined by looking at the maximum cadence among all its component prices.
+
+A subscription’s **billing period** is the length of time that determines how often invoices are generated, aligned to a bill cycle day. It can be determined by looking at the minimum cadence among all the component prices.
+
+| Component prices                                                               | Term    | Billing period |
+| ------------------------------------------------------------------------------ | ------- | -------------- |
+| 2 Monthly usage charges                                                        | Monthly | Monthly        |
+| 2 Monthly usage charges, Annual platform fee                                   | Annual  | Monthly        |
+| Monthly charge for storage, Quarterly charge for services, Annual platform fee | Annual  | Monthly        |
+| Quarterly charge for services, Annual fee                                      | Annual  | Quarterly      |
+
+A subscription’s current **status** is a function of its start and end date.
+
+| Status   | Description                                                                                                                                                                       |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| upcoming | The subscription’s start\_date is in the future. Sending usage data for the corresponding customer will not be associated with any charges since there is no active subscription. |
+| active   | The subscription is currently active, and may accrue charges as usage events are ingested.                                                                                        |
+| ended    | The subscription’s end\_date is in the past, likely as a result of a cancellation.                                                                                                |
+
+### Day alignment[](#day-alignment "Direct link to heading")
+
+By default, monthly subscriptions that are created will be billed on the first of each month, and any in-advance charges (e.g. a platform access fee) will be appropriately pro-rated on the first invoice. This behavior is desirable because it provides a consistent reference point for internal processes, such as accounting.
+
+Orb also allows you to align the billing cycles with the date that the subscription was created. If a subscription was created on the 14th of November and involved a monthly price, this behavior would enable you to consistently invoice the customer on the 14th of each month. Orb recommends that you use this behavior if you’d like to avoid pro-rating any in-advance fees on the first invoice. If the anchored day is not present in the current month (e.g. billing in February for a subscription that started on Jan 31), then the last day of the month is used.
+
+### Cancellation behaviors[](#cancellation-behaviors "Direct link to heading")
+
+A subscription can be cancelled either effective immediately or at the end of its subscription term. If a subscription is cancelled end of term, it will continue to invoice every billing period until the term is exhausted.
+
+Orb also allows canceling a subscription effective a _past_ date. The following examples illustrate how this is handled, where the cancellation action occurs on the "action date" but the `requested_date` (via the [cancel subscription](/reference/cancel-subscription) endpoint) is the effective date. Note that backdated cancellations are allowed only if there are no paid invoices between the action date and the requested date. In these examples, assume that the subscription bills $50 monthly up front, and has a usage based fee.
+
+| Subscription start date | Cancellation action date | Cancellation effective date | Behavior                                                                                                                                                                                                                                                                              |
+| ----------------------- | ------------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 01-01-2022              | 01-15-2022               | 01-13-2022                  | Consistent with [prorations for in-advance fees](/guides/product-catalog/subscription-management#prorations-for-in-advance-fees), Orb will generate a balance refund for the unused time for the month of January, and an in-arrears invoice capturing any usage from 01-01 to 01-13. |
+| 01-01-2022              | 01-15-2022               | 01-01-2022                  | Orb will void the invoice issued on 01-01, and generate no further invoices.                                                                                                                                                                                                          |
+| 01-01-2022              | 02-15-2022               | 02-01-2022                  | Orb will void the invoice issued on 02-01 which includes the upfront charge for February, and issue a new invoice for 02-01 capturing the usage for the month of January.                                                                                                             |
+
+## Trials[](#trials "Direct link to heading")
+
+A subscription’s trial is determined by its trial configuration on the [plan](/guides/concepts#plan-and-price) level. However, even in the case that a Subscription’s plan is changed (see below), a subscription is always eligible for _at most one trial_ and will never undergo a second trial, even if its new plan normally has a trial phase.
+
+## Subscription price overrides[](#subscription-price-overrides "Direct link to heading")
+
+When creating a customer’s subscription to a plan where the existing plan terms need to be adjusted (e.g. because a specific amount has been negotiated differently), Orb provides the ability to _override_ plan configuration, dynamically creating a new plan. This provides the benefit that the new plan does not need to be constructed from scratch, and can inherit the defaults from a base configuration.
+
+To provide the ability to trace the original template from which one-off deals arise, Orb also tracks _plan lineage_, where each plan may be associated with a base plan. Information about the source plan can be used to understand how plans evolve over time, as well as perform orchestration actions per _cohort_.
+
+## Subscription plan changes[](#subscription-plan-changes "Direct link to heading")
+
+As your customer continues using your product, they may choose to change their level of service, requiring a change to their billing configuration. This is most common when a customer is either _upgrading_ or _downgrading_ plans, but can also be necessary when any pricing terms durably change (e.g. the addition of a new usage metric to an existing plan, or a new signed commitment requiring a minimum to be added to the plan).
+
+When you execute a subscription change, Orb internally _versions_ the Subscription, and continues to provide an audit trail of the previous state and plans of the Subscription. Since Orb’s invoices always correspond to a _single_ plan, so a plan change may result in two invoices being issued: an invoice with charges on the old plan, as well as an up-front invoice for the new plan.
+
+### Prorations for in-advance fees[](#prorations-for-in-advance-fees "Direct link to heading")
+
+If a plan change is for a customer that has already paid an in-advance fee, Orb will credit the customer an amount corresponding to the portion of the time period that was left unused using day-based proration. This amount will be added to the customer balance, which will be used by future invoices.
+
+Consider the following plans table:
+
+| Plan Name    | In advance fee |
+| ------------ | -------------- |
+| Beginner     | $50            |
+| Intermediate | $100           |
+| Advanced     | $500           |
+
+The following timeline illustrates the prorations, assuming that all subscriptions bill on the first of the month and prorate accordingly:
+
+| Date       | Manual actions                        | Orb behavior                                                                                                                                                                                                                                                                                                                                          |
+| ---------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 07-01-2023 | Subscription started to Intermediate  | Orb issues an invoice for $100.                                                                                                                                                                                                                                                                                                                       |
+| 07-04-2023 | Changed from Intermediate to Advanced | Orb issues an invoice for any usage accrued on Intermediate.Orb credits the customer balance for 28 days that were not used on Intermediate ($90.32).Orb issues an invoice for 28 days of utilization of Advanced ($451.61), and utilizes the full customer balance to charge $361.29.                                                                |
+| 07-11-2023 | Changed from Advanced to Beginner     | Orb issues an invoice for any usage accrued on Advanced. Orb credits the customer balance for 21 days that were not used on Advanced, out of the original 28 days paid ($338.71).Orb issues an invoice for 21 days of utilization of Beginner ($33.87), and draws down the customer balance to charge $0\. The remaining customer balance is $304.84. |
+
+### Scheduling plan changes[](#scheduling-plan-changes "Direct link to heading")
+
+Orb’s web application supports changing a subscription’s plan immediately, on a requested future date (e.g. the _start of a new contract_), or at the end of the subscription’s current term (e.g. if the term represents a customer's current commitment). This also provides an opportunity to change the subscription’s billing date, which can be modified to be the start of the _new_ plan.
+
+Once a plan change has been scheduled, Orb will honor the change over any scheduled cancellations.
+
+![plan_changes.png](/images/guides/product-catalog/change-plan-865eb1bfd1e601e5f608f45bd98c2871.png)

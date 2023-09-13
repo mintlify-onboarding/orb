@@ -1,0 +1,38 @@
+---
+title: "Backfill and amend events"
+---
+
+Orb provides powerful and audit-safe mechanisms to handle reporting errors from your system, downtime or lag in your infrastructure, and other cases where you need to revise data that has been reported to Orb. Amendments on _usage data_, rather than simply editing invoice line items, provide increased transparency in real-time to you and your customers. They also allow you to adjust the underlying dataset in a traceable way, relying on Orb to calculate the effects of the new data on the invoice instead of doing this manually.
+
+Orb provides a backfill API that also allows you to optionally replace or deprecate existing events in a timeframe. You can use this in order to:
+
+* Decrease historical usage consumption because of degraded service availability in your systems
+* Account for gaps from your usage reporting mechanism
+* Make point-in-time fixes for specific event records, while retaining the original time of usage and associated metadata
+
+These APIs are designed with two explicit goals:
+
+* Amendments and backfills are **always audit-safe**. For auditing and data fidelity purposes, Orb never overwrites or permanently deletes ingested usage data.
+* These operations **always preserve data consistency**. Orb prevents you from ending up in a state where data partially reflects an amendment operation, where it can be difficult to decipher the state of a customer’s usage events.
+
+## Reporting grace period[](#reporting-grace-period "Direct link to heading")
+
+Orb supports real-time ingestion of usage data, preventing you from having to perform any batching or aggregation logic over your events. However, it’s common for your _reporting_ infrastructure to lag behind _user actions_ that correspond to usage, especially when usage is reported asynchronously to Orb.
+
+Orb always honors the `timestamp` property of the event, which represents _when the action took place_ for billing purposes and is important in order to place the usage in a specific billing period. To account for reporting delays, your system can report events to the Orb API up to 12 hours after the `timestamp`, which is called the _grace period_ for event reporting. This is especially important towards the end of a billing cycle, because a pending invoice might still be subject to changes for 12 hours after the end of the period and will not be finalized until the grace period has passed. The grace period is configurable at an account-wide level.
+
+## Timeframe-based amendments[](#timeframe-based-amendments "Direct link to heading")
+
+In cases where all events in a specific time range need to be overwritten, Orb [allows you to provide](/reference/amend-usage) an exact timestamp range and a new set of events that should be used for billing purposes. Old events are marked as archived; they can still be queried via Orb’s APIs but Orb will not use them for any billing functionality.
+
+A timeframe based amendment is ideal in scenarios such as downtime in your system where critical functionality was unavailable and you want to clear any usage that happened for affected customers.
+
+## Amending single events[](#amending-single-events "Direct link to heading")
+
+In order to change the structure of a _single known event_, Orb [provides a PUT verb on event resources](/reference/amend-event). For a given event ID (which is the same as an event’s `idempotency_key`) this endpoint can be used to change any part of the event, excluding its `timestamp` and associated customer ID. As with timeframe-based amendments, Orb never deletes the original event, but it is marked as archived and not used for billing purposes.
+
+A single-event amendment is ideal in cases where there is a specific dispute (e.g. a transaction needs to be reversed). In cases where the _status_ of a resource changes over time, Orb recommends sending an _additional_ usage event rather than amending the existing one in order to maintain both pieces of state.
+
+## Deprecate a single event[](#deprecate-a-single-event "Direct link to heading")
+
+Orb allows you to [deprecate an event](/reference/deprecate-event) given an event ID, which means that it will no longer be counted towards an active subscription's billing cycle. As with all amendments functionality, the original event will be archived and not permanently deleted.

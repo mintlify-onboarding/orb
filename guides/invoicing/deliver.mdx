@@ -1,0 +1,33 @@
+---
+title: "Deliver invoices"
+---
+
+Orb can directly deliver invoices to your customers by email without any additional integration work or the use of a dedicated email provider. Each email contains a preview of the invoice in its body, attaches the invoice PDF, and links to the Orb invoice portal to submit payment. 
+
+### Configuring delivery[](#configuring-delivery "Direct link to heading")
+
+If your account is set to deliver emails automatically, emails will be sent from an Orb email address (`invoices+<account-id>@withorb.com`) to the primary email address configured for the customer, with additional email addresses included as CC recipients. The `reply-to` email address can be configured to an email address of your choosing. Sending these emails from your own custom email domain is not yet supported, but please reach out to the Orb team if this is required.
+
+Manually triggering email delivery can be done from the invoice page. Note that Orb does not automatically send emails for invoices in test mode, and also does not send emails for $0 invoices which are marked as paid automatically.
+
+![invoice-email-delivery.png](/images/guides/invoicing/invoice-email-delivery-6efb60169a808133bb948c38c11ff81c.png "Invoice issued email")
+
+### Configuring company logos on invoices[](#configuring-company-logos-on-invoices "Direct link to heading")
+
+You can add and update your company logo that appears on your invoices by going into the [settings](https://app.withorb.com/settings), under "Invoice formatting". This logo will appear on your web invoices, invoice pdfs, and emails.
+
+For best results, your logo should
+
+* have a transparent background
+* use darker version of the logo (your logo will always be against a white background)
+* be limited in height to 40px and should not exceed 1200px in width
+
+![logo-settings.png](/images/guides/invoicing/logo-settings-64749fabad7546c0d3dd1f85ef8ade21.png "Settings to define company logo")
+
+### Email types[](#email-types "Direct link to heading")
+
+Orb automatically delivers the following emails:
+
+* **Invoice issued**: delivered as soon as the invoice transitions to the issued state. Note that if the invoice is immediately auto-collected (i.e. it’s due on issue), this email will not be sent in lieu of a payment success or failure email. This email type can also be triggered manually via the Orb web application.
+* **Payment success**: delivered when an invoice transitions to paid, whether as a result of auto-collection or manual payment through the invoice portal
+* **Payment failure**: delivered when Orb’s auto-collection functionality fails (for example, due to insufficient funds or a different card error). The customer may retry the payment with another payment method through the invoice portal, or payment for the invoice will be retried via Orb’s dunning behavior.

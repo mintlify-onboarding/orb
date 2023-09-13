@@ -1,0 +1,88 @@
+---
+title: "Create a Simple Metric"
+description: "Now that we have usage events in Orb, the next step is to decide how to use them. A billable metric defines an aggregation over usage events — it’s a query definition that Orb maintains for the relevant customers as new events stream in. In more technical terms, Orb's maintains a materailized aggregate over your event datastream."
+---
+
+## Simple count[](#simple-count "Direct link to heading")
+
+To get started, let’s create a billable metric that just counts all the events you’ve ingested.
+
+1. Navigate to the [metric creation page](https://app.withorb.com/metrics/new) by clicking "Billable Metrics" in the left sidebar and then "+ New metric".
+2. Select "Simple event filters"
+3. Update the `event_name` filter to "matches any value".
+4. Click "Preview" to see a sample of usage events — here, you’ll see the events you’ve ingested into your account.
+5. Click "Next" and ensure the calculation type is set to "Count"
+6. Click "Next", and enter "Count all events" for the name.
+7. Under "Item", fill in "Count" then click "Publish".
+
+<Frame>![Simple Count](/images/guides/quickstart/simple_count_metric-9e4155233a55c1ca81042112cc9ec1c9.png)</Frame>
+
+You should now see the details of your newly created billable metric! Although we aren't going to do this yet, when you associate a Price to this metric (which will determine how to charge for the constantly updating aggregate value), you'll assign a price cadence. The cadence determines the time period over which this metric is evaluated (e.g. "Monthly" means we evaluate the metric over the last month of usage events every month), and also determines how often this price will charge for the duration of the subscription. The "Price model" determines how Orb turns the output of the billable metric into an amount to charge the customer.
+
+## Refining your metric[](#refining-your-metric "Direct link to heading")
+
+We‘ve now created a billable metric, so now let’s start tuning the attributes of the metric. With these attributes, you’ll be able to refine your metric to meet the needs of your business.
+
+A billable metric is composed of **filters** and an **analysis** function. Filters enable you to only consider the events relevant to your metric. The analysis determines how Orb turns all of the filtered events into a single number. The "Count all events" metric didn’t filter out any events and the analysis was just a count.
+
+Let’s create a new metric that filters to a single event name and counts the distinct values of an event property you’ve ingested:
+
+1. Navigate to the metric creation page under "+ New Metric" > "Simple event filters".
+2. Update the `event_name` filter to match a single event name. If you don’t remember which events you’ve ingested, feel free to preview with a "matches any" filter and pick one.
+3. Once selected, hit "Next" to proceed to the next page.
+4. Update the "Calculation" to "Unique".
+5. Set "Over property" to a property you’ve ingested where there are multiple distinct values.
+6. The "Sample events" pane will automatically update when you set this property.
+7. Click "Next", and name the metric "Count distinct".
+8. Under "Item", fill in "Count distinct" then click "Publish".
+
+This metric, unlike "Count all events", depends on the values in the usage events you’ve ingested. Usage events that don’t match the `event_name` you selected will not be considered in the analysis. The output of the analysis will depend on the values of the property you selected.
+
+<Note>
+  **Automatic filters**
+
+  Note that you’ll never need to explicitly include a filter for the customer or time range, because Orb will always include those filters when evaluating a metric in the relevant context. For example, based on the plan in which the metric is used, the same billable metric may be evaluated over a monthly or quarterly time range.
+</Note>
+
+Now that we’ve gone over the basics of metric creation, you can create a metric to support your business’s billing needs. You can create multiple metrics with different analyses over the same event stream, enabling you to change the way you charge without ingesting new events.
+
+## Advanced Metrics[](#advanced-metrics "Direct link to heading")
+
+### Computed properties[](#computed-properties "Direct link to heading")
+
+If you want to aggregate over a transformation of properties in your usage events, Orb supports computed properties. When defining the aggregation for your metric, instead of selecting an event property, select "Computed property…" at the top of the list. This will open an editor where you can define the transformation.
+
+For example, if you provided file storage as part of your offering and wanted to charge for megabytes downloaded, but your event property is `bytes_downloaded`, you could use a computed property: `bytes_downloaded / 1000000`. Conditional expressions are also supported, so if you wanted to charge double for fast downloads (denoted by `download_speed: fast` in the event properties), you might configure the following computed property:
+
+<Frame>![Preview pricing](/images/guides/quickstart/computed_property-1021b6f1647da77613f7534526db6a5c.png)</Frame>
+
+### Custom SQL[](#custom-sql "Direct link to heading")
+
+Although the basic Orb interface allows you to configure metrics with a series of conditional statements and some preset analysis functions, you may want to define a metric that is more complex. Just as with the basic definitions, Orb automatically parses the SQL you provide and appends the filters for a specific customer and timeframe when evaluating the metric in the context of a subscription.
+
+Orb’s web application allows you to switch to SQL, exposing the underlying custom SQL editor. You can do this by clicking the "Convert to SQL" button during the data aggregation step or by selecting a "Custom SQL query" at the beginning of the metric creation flow.
+
+In the SQL editor, you can define a query over the table `events`. For example, counting all events would look like:
+
+```
+SELECT COUNT(1) FROM events
+
+```
+
+You also have access to all of the properties from the usage events you’ve ingested. You can filter and aggregate over them as if they were columns on the `events` table. For example, if a file storage company wanted to charge for the number of distinct file paths downloaded more than 100 times, they could use the following metric:
+
+```
+SELECT COUNT(1)
+FROM (
+  SELECT COUNT(1) as c
+  FROM events
+  WHERE event_name = 'download'
+  GROUP BY file_path
+)
+WHERE c > 100
+
+```
+
+Downstream of your metric definition, Orb supports all billing features, even if your metric contains complex aggregations and subqueries. You’ll get the same robust pricing functionality and usage visualizations as you’d get with simple metrics.
+
+Congratulations! You’ve successfully set up billable metrics and are able to create new metrics as your business needs evolve. You’re now ready to configure some pricing that ties to your metric.

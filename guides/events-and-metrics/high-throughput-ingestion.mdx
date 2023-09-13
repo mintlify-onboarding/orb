@@ -1,0 +1,71 @@
+---
+title: "Scale ingestion throughput"
+---
+
+Through the [native ingestion pathway](/guides/events-and-metrics/event-ingestion), Orb can provision capacity for up to 1,000 events per second, still allowing for brief spikes in event volume. For the majority of use cases, including infrastructure customers, this event rate suffices as it translates to over 86 million events per day. If you don't expect your workload to exceed this rate, the native ingestion pathway provides you the most flexibility because Orb stores your raw event data, allowing you to query it in any way you'd like with billable metrics.
+
+However, if you plan to continuously send billions of events per day, Orb offers hosted streaming aggregation, rolling up your event data as it’s ingested into Orb. These rollups ensure fast access to real-time usage data spanning **petabytes** of events.
+
+info
+
+Orb's streaming aggregation architecture and high throughput ingestion has undergone sustained stress testing at volumes exceeding hundreds of thousands of events a second. If you have a specific event load you're looking to support, our team can help you set up a test environment to illustrate how Orb can support your volume.
+
+## Architecture and configuration[](#architecture-and-configuration "Direct link to heading")
+
+Orb's streaming aggregation typically uses an intermediate cloud bucket as a durable message queue for events.
+
+A rollup configuration in Orb is defined by:
+
+* A set of **grouping** properties. This is a tuple of properties that identify each grouping that Orb emits per timeframe.
+* An **aggregation function** for each property you’d like to aggregate in a given rollup. By default, Orb will also include the count of events in the rollup.
+* The time window over which you’d like to compute the final rollups (default is 10 minutes).
+* The frequency at which you’d like Orb to emit partial rollups (default is 30 seconds).
+
+Orb emits partial frequent rollups to ensure you have access to usage data as it arrives, not just when the aggregation window is complete.
+
+![image.png](/images/guides/events-and-metrics/streaming-aggregation-a385018fcfdbe2697ecb85205b30f2d8.png)
+
+### Example: Rollups on data download[](#example-rollups-on-data-download "Direct link to heading")
+
+Imagine you’re a file storage company that charges by the number of files downloaded and the total bytes downloaded. You offer three tiers of download speeds (fast, medium, and slow), charging more for higher speeds.
+
+Your customers download hundreds of thousands of files every second, and you send every download to Orb as a usage event with the following shape:
+
+```
+
+{
+  "id": "afdb028a-c510-11ed-9faa-0a58a9feac02",
+  "customer": "617cb4de-c511-11ed-9faa-0a58a9feac02",
+  "download_timestamp": "2022-08-14T15:14:31.132Z",
+  "bytes_downloaded": 3256,
+  "download_speed": "fast"
+}
+
+```
+
+You configure Orb’s streaming aggregation with the following properties:
+
+* `id` is the field Orb will use to deduplicate events.
+* The `customer` property maps to `external_customer_id`, and uniquely identifies an Orb customer.
+* `download_timestamp` is the timestamp used to bucket events into rollup windows
+* Sum over `bytes_downloaded` grouping by `download_speed`
+* Aggregate over 10 minute windows, emitting partial rollups every 30 seconds
+
+Orb will then ingest these aggregates with `timestamp` as the start of the aggregation window:
+
+```
+
+{
+  "idempotency_key": <ORB_GENERATED_IDEMPOTENCY_KEY>,
+  "timestamp": "2022-08-14T15:10:00.000Z",
+  "external_customer_id": "617cb4de-c511-11ed-9faa-0a58a9feac02",
+  "count": 3037816,
+  "sum_bytes_downloaded": 25343235423,
+  "download_speed": "fast"
+}
+
+```
+
+You’ll note that `bytes_downloaded` in the original payload translates to `sum_bytes_downloaded` in the ingested event, signifying that Orb has automatically summed this field for all events that have `download_speed: fast`, in the 10 minute timeframe `2022-08-14T15:10:00.000Z` to ``` 2022-08-14T15:``20``:00.000Z ```.
+
+Once these events are ingested, you can then define billable metrics over them, retaining the flexibility to evolve the way you charge without running a backfill.

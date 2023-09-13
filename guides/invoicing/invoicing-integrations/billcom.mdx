@@ -1,0 +1,43 @@
+---
+title: "Invoicing with Bill.com"
+---
+
+## Prerequisites:[](#prerequisites "Direct link to heading")
+
+1. Bill.com account
+2. Access to the Bill.com API.  
+   * If you have not received access to the developer API, you can request access on Bill.com using [this form](https://developer.bill.com/hc/en-us/articles/360057269632-API-Signup-Request). Pending approval of this request, Bill.com should provide you with information such as your Organization ID and Developer key.
+
+## Connecting Bill.com with Orb[](#connecting-billcom-with-orb "Direct link to heading")
+
+Once you have received developer access, generate a token for Orb to use from the Bill.com dashboard. We recommend generating a separate token for Orb. Follow the steps below to generate a new token and connect your Bill.com account to Orb:
+
+1. From the settings tab of the Bill.com dashboard, select “Tokens” from the “Apps” section
+2. Click “New” token  
+   1. Enter a name  
+   2. Upon clicking “Save,” bill.com will display the password for this token. This corresponds to the “Token password” in the Orb configuration modal.  
+   3. The “Organization ID” should have been provided by Bill.com when you received access to the Bill.com developer API. These credentials are typically sent in an email.
+3. In the Orb dashboard, click the dropdown menu on the bottom left and navigate to Organization settings, navigate to the “Connections” tab of the modal, and select “Connect to Bill.com”  
+   1. Enter the token name specified in step 2.1.  
+   2. Enter the token password provided by Bill.com in step 2.2.  
+   3. Enter the organization ID provided by Bill.com when you received access to the developer API.  
+   4. Upon clicking Save, Orb will automatically verify that your credentials are valid!  
+   5. You should now see Bill.com as an active connection at the top of the Connections tab.
+
+## Mapping items[](#mapping-items "Direct link to heading")
+
+Mapping Bill.com items to Orb items is optional. We recommend doing the mapping if you’d like to use any reporting or accounting automation on top of invoices in Bill.com, as it allows for standardized metadata on the invoice.
+
+In Bill.com, items can be found from the settings page under the Accounting tab. Create an item for every item that you are selling in Orb. 
+
+After items are created in Bill.com, navigate to the Items tab in Orb under Settings, and select a Bill.com item for each Orb item. 
+
+![image.png](/images/guides/invoicing/invoicing-integrations/billcom-item-9db15885a3135d404cf544cca07f33ac.png)
+
+## Configuring customers[](#configuring-customers "Direct link to heading")
+
+When creating or updating customers in the Orb UI, select Bill.com as the Payment Provider in order to view a list of previously created customers in your Bill.com account. 
+
+Customer mappings can also be configured in the API, by passing in the customer’s Bill.com ID under `payment_provider_id`, and setting `payment_provider` to `bill.com`. Find the customer’s Bill.com ID by navigating to the customer’s page in Bill.com, and copying the ID from the URL (e.g. in the URL `https://<...>.bill.com/neo/frame/customers/0cu01JHPOGEAEFIE6kue`, `0cu01JHPOGEAEFIE6kue` is the ID)
+
+Once configured with mappings, invoices for customers with a Bill.com payment provider ID will be synced to Bill.com.

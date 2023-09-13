@@ -1,0 +1,69 @@
+---
+title: "Build your product catalog"
+---
+
+Since Orb automates recurring billing, customers in Orb maintain [subscriptions](/guides/concepts#subscription) to your product. Subscriptions are associations between a customer and a plan.
+
+## Plan[](#plan "Direct link to heading")
+
+A plan is a standardized set of pricing terms, and corresponds to a specific tier of functionality within your product. Depending on the nature of your business, many customers might be assigned to the same plan (e.g. when a visitor upgrades to the “Pro” plan listed on your website), and some customers may have their own one-off plans (e.g. the “Enterprise” offering with negotiated terms and feature set).
+
+![create_plan_flow.png](/images/guides/product-catalog/create-plan-flow-66a1c50096bc509aa23f8206b404ad34.png)
+
+### Component prices[](#component-prices "Direct link to heading")
+
+A plan is a collection of prices, where each price corresponds to a charge you display on your customer’s invoice (also known as a line item). At their core, prices need to be configured with a _cadence_ (how often to charge), and a pricing function (how much to charge for a given quantity).
+
+Prices can be categorized as:
+
+* Usage-based prices, which are always attached to a single [billable metric](/guides/concepts#metric). The billable metric determines the quantity, and the price determines the amount to charge based on its pricing model.
+* Recurring fixed prices, which simply apply a fixed charge on a cadence. A common example is a platform access fee, or a per-user fee where the number of users is known up-front.
+
+### Standard price models[](#standard-price-models "Direct link to heading")
+
+| Price model | Description                                                                                                                                      | Example                                                                                                                                               |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit        | A simple, linear price that scales with the total units of usage.                                                                                | $0.80 per API request                                                                                                                                 |
+| Tiered      | The cost of a unit depends on the _tier range_ it falls into. Normally, each incremental unit will get cheaper as usage hits reach higher tiers. | $5/GB for the first 100GB, $10/GB thereafter                                                                                                          |
+| Bulk        | The total number of units determines the cost of all units. Typically, reaching a higher tier value will decrease the price per unit.            | $0.20/page processed, discounted to $0.10/page if 10,000 pages consumed                                                                               |
+| Package     | Units are rounded up to a specified granularity level for pricing.                                                                               | $1 per 100 asynchronous jobs                                                                                                                          |
+| BPS         | Configure a basis-points take rate and maximum price _per_ transaction. Also available in bulk and tiered configurations.                        | $0.20 per payment processed                                                                                                                           |
+| Matrix      | Configure a grid of unit prices for each combination of properties.                                                                              | $0.05/GB for cold storage / us-east-1 $0.08/GB for hot storage / us-east-1  $0.03/GB for cold storage / us-west-1$0.08/GB for hot storage / us-west-1 |
+
+### Custom prices[](#custom-prices "Direct link to heading")
+
+Orb's extensible platform approach makes it simple to deploy custom prices onto the platform using Python, so you're not limited by Orb's standard price models. P ricing models taking a flexible number of parameters are fully configurable via the Orb UI. See [custom pricing platform](/guides/extensibility/custom-pricing) for how these prices are set up.
+
+### Discounts[](#discounts "Direct link to heading")
+
+Orb provides rich support for applying discounts at both the plan level (which apply to the entirety of a subscription’s invoice), as well as for an individual price (a single line item on your invoice).
+
+Discounts can optionally expire after a certain number of billing periods, which make them ideal for limited-time contract terms. This prevents you from having to manually orchestrate a plan change for your subscription to provide new pricing or to remove a discounted term.
+
+Orb supports multiple discount models:
+
+* **Usage-based discounts**, which decrease the quantity of a price. You can this discount to represent a free allocation, such as decreasing the number of units processed by 300\. Usage-based discounts are compatible with all pricing models, not just simple unit prices.
+* **Amount discounts**, which decrease the line item or invoice total by a certain flat dollar amount. A custom term that decreases a customer’s invoice by $100 each month would use this discount model.
+* **Percentage-based discounts**, which decrease the invoice or invoice line item by a percentage of their subtotal. This can be used to provide 20% off recurring storage costs for the first year of a subscription.
+
+### Minimums[](#minimums "Direct link to heading")
+
+In addition to discounts, you may want to represent commitments to a dollar amount in Orb by using minimums. Setting a minimum amount ensures that the total of the invoice or invoice line item is at least a specific threshold. If the minimum threshold isn’t met, Orb will automatically add a line with the difference between the minimum threshold and current subtotal.
+
+Just like discounts, minimums can optionally expire after a set number of billing periods.
+
+### Plan phases[](#plan-phases "Direct link to heading")
+
+Subscriptions will often have a pre-decided schedule of changes, such as a change in the pricing after a limited period or an increase in the committed spend after a fixed number of months into the subscription.
+
+Instead of having to modify a subscription’s plan manually, plan phases provide an automated way to encode these steps into the definition of the plan itself. By default, each plan has a single phase, which means that no changes are scheduled to pricing terms.
+
+Configuring plan phases simply requires specifying a duration in billing terms, and optionally a description for what the phase represents (e.g. initial 6-month commitment). A phase switch always happens at the end of a billing period, which means that a single subscription invoice will not contain charges from prices in multiple phases. Note that the last phase of any plan is an evergreen phase, which signifies that it will continue indefinitely until the end of the subscription.
+
+### Trials[](#trials "Direct link to heading")
+
+A subscription can start with a free trial, during which your users can use the product without paying. A trial inherits the first phase of your plan’s pricing configuration, excluding any fixed fees specified. For example, if you usually charge a $500 platform access fee in-advance every month and a fee for storage charges, the trial period will only track storage charges. Even during a trial, Orb provides complete visibility into your customer’s usage and the charges that would normally be associated with them.
+
+A trial is configured with a duration in days, which represents the time period before the customer starts paying for their incurred usage. Orb also allows you to specify a maximum usage amount in dollars, which lets you limit how much consumption is discounted on the trial invoice. At the end of the trial’s duration, Orb will always generate a single invoice that breaks down the usage charges, and includes an additional trial discount line item. The discount line item will be at most the maximum usage amount.
+
+Orb also allows you to extend a trial period while a trial is still active, which is often useful as a sales lever to provide your customers more time to try your product. When a trial period is extended, Orb will continue to discount usage charges up to the maximum amount, if configured.

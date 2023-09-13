@@ -1,0 +1,31 @@
+---
+title: "Timezone localization"
+---
+
+Orb provides different timezone configurations to best serve the needs of your business. Once you determine your handling of timezones on an account and customer basis, Orb's APIs and web UIs provide a consistent experience.
+
+## System-wide UTC[](#system-wide-utc "Direct link to heading")
+
+The default way to configure your Orb account is to use UTC, or no timezone offset, for your Account and for all your customers.
+
+With this configuration, billing cycles for all customer subscriptions will begin and end at a UTC midnight boundary, regardless of where the business is located. Naturally, this translates to how usage is displayed in dashboards (e.g. day buckets will be UTC aligned) as well as other timezone localized features such as credits expiry. Invoices across all your customers will be generated at a consistent time after UTC midnight, depending on your account's grace period.
+
+Note that the System-wide UTC timezone is also the easiest to reason about with respect to event reporting, which enforces that events are sent with a UTC timezone `timestamp` field.
+
+UTC billing is common in infrastructure use cases, where server (or other automated resources) operate on UTC time and emit events naturally aligned with UTC.
+
+## Single account timezone[](#single-account-timezone "Direct link to heading")
+
+With a single account timezone, you can align all customer subscriptions to the timezone that best matches _your_ business' preferred hours. For example, a business located in the San Francisco area may set the account-wide timezone to `America/Los_Angeles` to ensure that the billing cycle for all their customers occurs on the 1st of the month PT.
+
+With this configuration, billing cycles for all customer subscriptions will have boundaries aligned to the specific timezone. This can be particularly convenient to provide the most predictable invoicing experience for your own internal teams; all invoices will be generated at a specific time in your timezone, depending on the configured grace period after the billing cycle end.
+
+## Per-customer timezone[](#per-customer-timezone "Direct link to heading")
+
+Orb provides the flexibility to set each customer's timezone _individually_. This can be a powerful option to provide end customers with a subscription cycle that's simple for them to understand.
+
+For example, if you report an event with `timestamp` \= `2022-03-01T07:00UTC` and have Orb configured with per-customer timezones, then that event will fall in a February billing cycle for a customer set to `America/Los_Angeles` but will fall in the March billing cycle for a `UTC` timezone customer.
+
+Per-customer timezones can also create a more predictable user experience for your end users. For example, in a pre-paid credits system, if you set an `expiry_date` for credits at `2022-05-02`, Orb will automatically ensure that credits expire at the start of the date _in that customer's timezone_.
+
+In this case, Orb will generate invoices an appropriate time after midnight _in the local timezone_ of the customer, accounting for the grace period. Depending on where customers are located, this may mean that invoices are generated throughout your business day.

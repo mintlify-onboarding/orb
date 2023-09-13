@@ -1,0 +1,30 @@
+---
+title: "Invoicing with QuickBooks"
+---
+
+## Prerequisites:[](#prerequisites "Direct link to heading")
+
+1. QuickBooks account
+
+## Connecting QuickBooks with Orb[](#connecting-quickbooks-with-orb "Direct link to heading")
+
+1. In the Orb dashboard, click the dropdown menu on the bottom left and navigate to Organization settings, navigate to the “Connections” tab of the modal, and select Connect to QuickBooks
+2. Follow the instructions to connect QuickBooks
+
+## Mapping items[](#mapping-items "Direct link to heading")
+
+Mapping items to items in QuickBooks is required for the integration to succeed. If you do not map items, invoices will fail to issue.
+
+In QuickBooks, Items are called Products and Services, and can be found in the Get paid and pay menu (direct link [https://app.qbo.intuit.com/app/items](https://app.qbo.intuit.com/app/items)). Create a product or service in QuickBooks for every item that you are selling in Orb. 
+
+Then, navigate to the Items tab in Orb under Settings, and select a QuickBooks item for each Orb item. 
+
+![image.png](/images/guides/invoicing/invoicing-integrations/quickbooks-mapping-4d79193ba8a0fe8fb545ce6a8de76905.png)
+
+## Configuring customers[](#configuring-customers "Direct link to heading")
+
+When creating or updating customers in the Orb UI, select QuickBooks as the Payment Provider in order to view a list of previously created customers in your QuickBooks account. 
+
+Customer mappings can also be configured in the API, by passing in the customer’s QuickBooks ID under `payment_provider_id`, and setting `payment_provider` to `quickbooks`. The customer’s QuickBooks ID can be found by navigating to the customer’s page in QuickBooks, and copying the ID from the URL (e.g. `https://app.qbo.intuit.com/app/customerdetail?nameId=377`, where `377` is the ID)
+
+Once mappings are configured, invoices for customers with a QuickBooks payment provider ID will be synced to QuickBooks.

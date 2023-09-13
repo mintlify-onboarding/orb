@@ -1,0 +1,36 @@
+---
+title: "Request idempotency"
+description: "Orb's API supports idempotency, to allow safe request retries without duplicating actions. For example, an idempotency key can be used to ensure that a request to create a subscription never creates duplicate subscriptions. A unique idempotency key may be provided in the `Idempotency-Key` header for all `POST/PATCH `operations. Although the idempotency key is not required, it is strongly encouraged for all `POST/PATCH` requests. Idempotency keys for `GET/PUT/DELETE` requests will be ignored since these requests are idempotent by default."
+---
+
+Users will be able to safely retry requests that include an `Idempotency-Key` within 48 hours. Keys will expire after 48 hours, and Orb may re-execute side-effects as a result.
+
+```bash
+curl --request POST \
+     --url https://api.withorb.com/v1/subscriptions \
+     --header 'Idempotency-Key: U9djswkfm802dq2' \
+     --header 'Accept: application/json' \
+     --header 'Authorization: Bearer null' \
+     --header 'Content-Type: application/json'
+
+```
+
+## Response format[](#response-format "Direct link to heading")
+
+All requests performed with an idempotency key will include an `Idempotency-Key` header in the response to signal acknowledgement and processing of the key.
+
+Orb will include `Idempotent-Replayed: true` in the response to signal that the response is being served from a previous action. This can be taken to mean that no new side-effects were executed.
+
+## Generating idempotency keys[](#generating-idempotency-keys "Direct link to heading")
+
+Idempotency keys can be arbitrary strings with a max length of 64 characters. In order to generate a fully unique key, Orb recommends the use of UUIDs. 
+
+However, in some cases, idempotency keys can be used to ensure that a given action in a source system maps to one mutation in Orb. For example, if each customer ID in your system should have at most one Customer in Orb, consider using your customer ID as the idempotency key for the creation call.
+
+## Error cases[](#error-cases "Direct link to heading")
+
+Orb will return a 409 resource conflict error if the request was retried before the original request completed (concurrent request).
+
+Similarly, reusing an idempotency key with a different request payload will also result in a 409 resource conflict. 
+
+In the case of transient internal server errors, Orb will include the HTTP header `Transient-Error` with the value `true`. Such requests can be safely retried, and clients can reuse the same idempotency key within 48 hours to retry the request.

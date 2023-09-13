@@ -1,0 +1,102 @@
+---
+title: "Credit issued invoices"
+---
+
+A credit note is a document that can be used to decrease the amount due or issue a credit for an already issued invoice.
+
+Common situations for issuing a credit note include:
+
+* Duplicate - a duplicate invoice was sent to a customer for the same goods or services.
+* Fraudulent - a customer is disputing an erroneous invoice’s charges.
+* Order change - the number of items charged to the customer needs to be changed.
+* Unsatisfactory product - the customer is requesting a refund due to a product issue.
+
+Credit notes can be applied to invoices that either have an `issued` status or a `paid` status. When a credit note is issued for an `issued` invoice, it is considered an `adjustment`. When a credit note is issued for a `paid` invoice, it is considered a `refund`.
+
+Credit notes cannot be applied to any invoices that have been synced to an external provider such as Stripe or QuickBooks. Any adjustments made to the invoice should be done with the external provider.
+
+Credit notes will also include any applicable tax when associated with an invoice that included tax. Tax will be calculated when the credit note is issued.
+
+## Issuing an adjustment credit note[](#issuing-an-adjustment-credit-note "Direct link to heading")
+
+To create a credit note, navigate to an `issued` invoice in the Orb dashboard. In the top right dropdown menu, select “Issue credit note”.
+
+![image.png](/images/guides/invoicing/credit-note-1-12b1ef97e2225aca327cf0dd2bb9f1f6.png)
+
+The credit note will be populated with the current, maximum creditable amounts for each line item. Adjust the creditable amount for each line item in the invoice, and unselect line items that should not be credited. If a minimum amount was applied to the invoice or a line item, that delta can also be credited back. The "Adjusted amount due" will reflect the new amount due on the invoice after issuance. Choose a reason for the credit note and, optionally, add a memo to your credit note.
+
+![image.png](/images/guides/invoicing/credit-note-2-8f89626fe877498fe4380b848fc9d08c.png)
+
+Upon issuing the credit note, the invoice’s amount due will be adjusted and the credit note’s amounts will be shown on the invoice page. The invoice PDF will also be regenerated to include the credit note.
+
+![image.png](/images/guides/invoicing/credit-note-3-4347ce5a38c47dcc8ce03ceb7fa01cac.png)
+
+## Issuing a refund credit note[](#issuing-a-refund-credit-note "Direct link to heading")
+
+When a credit note is issued for a `paid` invoice, the flow is similar to issuing a credit note for an `issued` invoice with a few differences.
+
+When the credit note is issued, the amount due on the invoice will not be adjusted based on the credit note’s value, as the amount has already been collected. Instead, the customer balance will be incremented by the value of the credit note, and the credit note will linked on the invoice page. The credit note will not be attached to the invoice’s PDF in this instance.
+
+![image.png](/images/guides/invoicing/credit-note-4-6e1c0e78d39e1a8f86198529ea9f57f3.png)
+
+## Adding multiple credit notes[](#adding-multiple-credit-notes "Direct link to heading")
+
+Multiple credit notes can be applied to an invoice up to the total value of the invoice. After one credit note is applied to an invoice, the issue credit flow will populate the maximum creditable amounts for each line item.
+
+![image.png](/images/guides/invoicing/credit-note-5-36eaf7bf5bf9bf6d5514ef99653c8f31.png)
+
+All applied credit notes will appear on the invoice page.
+
+![image.png](/images/guides/invoicing/credit-note-6-abd15eaf6cc50a420e0ff6d6f7f22bfb.png)
+
+## Voiding a credit note[](#voiding-a-credit-note "Direct link to heading")
+
+To void a credit note, click on the credit note in the top left of the invoice page. From the dropdown at the top right of the page, click “Mark as void”.
+
+![image.png](/images/guides/invoicing/credit-note-7-81449b8dcd6bc1c5f18ec8aa0efe3d17.png)
+
+After the confirmation modal, the credit note will now be marked as void. For adjustment credit notes, the invoice’s amount due will be changed to reflect the credit note’s value being removed.
+
+![image.png](/images/guides/invoicing/credit-note-8-552d0ea2bd3ec30a7ff99dc4e6a537be.png)
+
+Refund credit notes cannot be voided.
+
+## Credit notes and customer balance[](#credit-notes-and-customer-balance "Direct link to heading")
+
+An invoice’s amount due can be adjusted by either utilizing the customer balance or issuing a credit note. Whereas the customer balance is automatically applied at the invoice’s finalization by Orb, a credit note can be manually applied to an already-issued invoice.
+
+Further, credit notes can be applied to invoices that have already utilized the customer balance in order to further affect the amount due. Applying adjustment credit notes will revert any applied balance, apply the credit note’s amount, and then re-apply any applicable remaining balance. The same behavior occurs if the credit note is voided.
+
+For example, if an invoice has a customer balance adjustment of $5:
+
+| Invoice total      | $10.00  |
+| ------------------ | ------- |
+| Balance adjustment | \-$5.00 |
+| Amount due         | $5.00   |
+
+When a $3 credit note is applied, the customer balance adjustment will be removed from the invoice and the accompanying amount will be incremented on the customer’s balance (e.g. $5 will be returned to the balance). The credit note’s amount is then applied and then a maximum of $5 can be reapplied to the invoice. The resulting invoice’s amount due will be broken down as:
+
+| Invoice total      | $10.00  |
+| ------------------ | ------- |
+| Credit note amount | \-$3.00 |
+| Balance adjustment | \-$5.00 |
+| Amount due         | $2.00   |
+
+If the credit note is voided, the $3 balance adjustment is reverted, the credit note’s amount is removed from the invoice, and the maximum of $5 can be re-applied to the invoice.
+
+| Invoice total      | $10.00  |
+| ------------------ | ------- |
+| Balance adjustment | \-$5.00 |
+| Amount due         | $5.00   |
+
+Issuing refund credit notes will not affect the customer balance transactions on an invoice.
+
+## Credit notes and subscription cancellation[](#credit-notes-and-subscription-cancellation "Direct link to heading")
+
+When cancelling a subscription during a billing period, Orb will issue a credit note against the original invoice for fees paid in-advance. The credit note will be for the remainder of the fee's period that is no longer being used.
+
+Unpaid invoices's total amount due will be reduced. If the relevant invoice has already been paid, the prorated amount is added to the customer's balance via the credit note and can be consumed by future invoices.
+
+## Email delivery[](#email-delivery "Direct link to heading")
+
+If the account and customer are configured for email delivery, all credit notes will be delivered on creation. Adjustment credit notes will include two PDFs: one of the credit note and one for the updated invoice with the credit applied. Refund credit notes will only have the credit note's PDF. Voiding a credit note will not send any emails.

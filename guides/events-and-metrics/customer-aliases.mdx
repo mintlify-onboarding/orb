@@ -1,0 +1,27 @@
+---
+title: "Alias customer IDs"
+---
+
+Orb provides the concept of an `external_customer_id` as an alias to Orb's own generated `customer_id` to allow ergonomic interaction with our APIs.
+
+This alias makes the integration process with Orb faster (by preventing the propagation or lookup of an extra piece of metadata) and can have significant consistency benefits as it avoids denormalization of an Orb ID in your system. Orb's APIs are designed to allow this alias _everywhere_ a `customer_id` is accepted, rather than restricting its use to specific surface areas.
+
+In order to set up this association, use the [Create customer](/reference/create-customer) endpoint and optionally pass in an existing identifier native to your system as the `external_customer_id`. Note that this identifier must be unique across all Customer resources in your Account, but can otherwise be an arbitrary string.
+
+## Usage in Orb APIs[](#usage-in-orb-apis "Direct link to heading")
+
+This mapping is most useful in the [Ingest usage event](/reference/ingest) call, where each event can simply contain a reference to the `external_customer_id` without looking up any Orb resources.
+
+Orb also provides other convenient APIs using the `external_customer_id` field, which save you the extra lookup of mapping a native ID to an Orb ID. Any endpoint definition that acts or filters based on a `Customer` resource will have an accompanying implementation using `external_customer_id`.
+
+For example, Orb supports both [Update customer](/reference/update-customer) using the Orb ID as well as the [Update customer by external ID](/reference/update-customer-external-id) action. Similarly, the [List Subscriptions](/reference/list-subscriptions) endpoint can be filtered either by the `customer_id` or `external_customer_id`.
+
+Note that when both `external_customer_id` and `customer_id` fields are present as options for an endpoint, Orb expects that you pass in exactly one and not both parameters.
+
+info
+
+### URL encode External Customer IDs[](#url-encode-external-customer-ids "Direct link to heading")
+
+Since the `external_customer_id` param can be present in a request URL and it may contain special characters, you should always URL encode the value when it's sent as a path parameter or query parameter.
+
+For example, the ID `en/cus/?1500` should be sent in a URL path as `en%2Fcus%2F%3F1500`.

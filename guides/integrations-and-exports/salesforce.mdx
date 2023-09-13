@@ -1,0 +1,57 @@
+---
+title: "Provide visibility in Salesforce"
+---
+
+![sfdc-account-page.png](/images/guides/integrations-and-exports/sfdc-account-page-ab092960a1510e5567e9987082c76ccb.png "Salesforce Account page with Orb usage and invoices data")
+
+Our Salesforce integration brings Orb’s rich usage data and financial resources natively into your Salesforce environment. The integration continually syncs resources from your Orb instance into Salesforce, including customer subscriptions, plan information, historical invoices, and usage.
+
+In concert with other data that lives in Salesforce (e.g. opportunity metadata, imports from other analytics applications, or manually tracked notes), Orb data can be a powerful way to drive ongoing sales success.
+
+The Salesforce integration allows your sales team to answer questions such as:
+
+* Which metrics is this Account being billed on? How is the last 30 days of utilization tracking for a given metric, and how does that compare to the previous 90 days?
+* Has there been an increase in utilization for this account recently that might motivate an upsell conversation, a decrease that could indicate a churn risk?
+* Is the breakdown of the upcoming invoice significantly different than previous invoices based on its line items?
+* Who are my top grossing accounts based on billed utilization? Which customers account for the top billed utilization for a specific metric?
+
+## Installation and configuration[](#installation-and-configuration "Direct link to heading")
+
+Orb's Salesforce application is distributed as a [Salesforce Managed Package](https://help.salesforce.com/s/articleView?id=sf.s1%5Fbranded%5Fapps%5Fmanaged%5Fpackage%5Fabout.htm%5C&language=en%5FUS). Reach out to the Orb team for a direct installation link.
+
+Installation of the package should be done by a Salesforce Admin. On the configuration page for the Orb application, you'll be asked to provide two fields:
+
+1. **API Key**: This is an Orb API Key that is used to fetch resources from the Orb API. While any valid API Key for your account can be used, we recommend provisioning a specific Salesforce API key for this purpose and idenitifying it appropriately. To provision an Orb API key, visit the API Keys tab in the Settings page of the Orb dashboard.
+2. **External Customer ID field**: Orb's sync ties together a Customer in Orb with an Account in Salesforce. If you already have a custom field on your Salesforce Account object that corresponds to the `external_customer_id` in Orb (which is often the internal workspace ID of the account), you can select it in this dropdown. This will allow the sync process to automatically map the Account, so no additional work is needed to associate each account to an Orb customer. By default, you will still be able to fill in the `Orb External Customer ID` or the `Orb Customer ID` field on any Account to create the associaiton.
+
+![sfdc-configuration.png](/images/guides/integrations-and-exports/sfdc-configuration-db53b712e618f917412766de95e43cf9.png "Configuring the Orb application")
+
+## Sync behavior[](#sync-behavior "Direct link to heading")
+
+Once your setup is complete, press the “Start sync” button to begin syncing resources. After the initial sync, Orb will sync resources daily. Orb syncs _all_ data to your Salesforce instance, even for Customers that don't have a matched Account. As a result, when you link a new Account to an existing Orb Customer, data for that Account will appear immediately without having to wait for another sync.
+
+### Object Mapping[](#object-mapping "Direct link to heading")
+
+![sfdc-mapping.png](/images/guides/integrations-and-exports/sfdc-mapping-5f4881fd06463206b8823d17efe90b42.png "Object mapping between Orb and Salesforce")
+
+As illustrated above, Orb connects to the native Account object, and creates several custom objects within your Salesforce instance.
+
+Orb's integration takes the approach of custom objects so that you can use more advanced reporting features within Salesforce, such as using SOQL or [Relationship Query](https://trailhead.salesforce.com/content/learn/modules/soql-for-admins/create-relationship-queries-with-custom-objects). For example, you might use the plan id or name on the Orb Subscription to create an advanced report that aggregates revenue across plans.
+
+## Pre-built components[](#pre-built-components "Direct link to heading")
+
+In addition to continually syncing in resources into your Salesforce instance, Orb comes with some pre-built components, which are meant to be added to your Account page. To add these components, go to the Salesforce [Lightning App Builder](https://trailhead.salesforce.com/content/learn/modules/lightning%5Fapp%5Fbuilder) and drag them into your existing Account page layout.
+
+### Orb Invoices List[](#orb-invoices-list "Direct link to heading")
+
+This component shows a list of the most recent issued invoices, as well as the upcoming (draft) invoice for the customer if the subscription is still active. Configure this component by dragging in the Orb Invoices selection in the "Custom - Managed" section of the sidebar in the Lightning App Builder. By default, this component displays the invoice date, due date, total amount due, and status of the invoice.
+
+If you'd like to display different data, you can construct a [Related List](https://help.salesforce.com/s/articleView?id=sf.rss%5Frelated%5Frecord%5Flist%5Fsingle.htm%5C&type=5) to construct your own Orb Invoices component. The available fields on Invoice and Invoice Line Item are noted above.
+
+### Daily Usage[](#daily-usage "Direct link to heading")
+
+This component shows a graph of the last 30 days of utilization, broken down by metric and day. For metrics that are decomposable (see [this discussion](/reference/fetch-subscription-usage#decomposable-vs-non-decomposable-metrics)), each day will record the incremental usage on that day, such as the total number of API requests. Configure this by adding a "Report Chart" in the Lightning App Builder with the pre-built report called "Orb Daily Usage" and configuring the "Filter by" Account ID field.
+
+![report-chart-lightning-app-builder.png](/images/guides/integrations-and-exports/report-chart-lightning-app-builder-0b658f33f98f4ab45c9ac5d681b9129a.png "Configuring the Orb Daily Usage component")
+
+In the case that the metric is not decomposable (i.e. it does not make sense to evaluate the metric independently for each day, like `DISTINCT` users), the daily total will show the difference between the previous day in the billing period. You'll note that for non-decomposable metrics, the first day of the subscription's billing period is likely to account for a significant portion of the consumption, and subsequent days will show any additional consumption as a delta from the first day.

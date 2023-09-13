@@ -1,0 +1,38 @@
+---
+title: "Pagination"
+description: "The Orb API implements cursor-based pagination on endpoints that list resources, such as the [List Customers](/reference/list-customers) endpoint. This makes it easy to incrementally load resources in the Orb API without the transfer of excessive amounts of data in one round trip."
+---
+
+At a high level, cursor-based pagination employs string tokens in the request and response to indicate reference points in the returned list.
+
+## Paginated API responses[](#paginated-api-responses "Direct link to heading")
+
+List endpoints utilize a standardized format that contains the requested list in a `data` response object, as well as some _metadata_ that's useful for pagination in the `pagination_metadata` response object.
+
+Generically, the response format is:
+
+```json
+{
+    "data": [
+       ...
+    ],
+    "pagination_metadata": {
+        "has_more": true,
+        "next_cursor": "..."
+    }
+}
+
+```
+
+A few notes on this returned result:
+
+* `has_more` will be `true` if there are more results that were not returned by this endpoint due to the `limit` value set.
+* `next_cursor` is a string value that will be non-`null` if `has_more` is `true`. This value should be provided to the same endpoint in a subsequent call to fetch more results, maintaining the same sort order.
+
+When `has_more=True`, pass the `next_cursor` response as the `cursor` query parameter to fetch the next page of results. 
+
+By default, paginated resources are sorted from most recently created to least recently created, determined by the `created_at` field on each resource.
+
+## Limits[](#limits "Direct link to heading")
+
+Orb implements a default page size of 20, with a maximum upper bound of 500 items per request. The number of items requested can be specified by passing in the `limit` query parameter to a paginated request.

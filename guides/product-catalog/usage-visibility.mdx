@@ -1,0 +1,31 @@
+---
+title: "View subscription usage"
+---
+
+A key benefit of Orb is the ability to understand the utilization of your customers as it happens, rather than with a manual or batch process. Visibility into accrued usage can help you identify trends among your customers, assess account health, and provide insights into business opportunities.
+
+## Usage visualizations[](#usage-visualizations "Direct link to heading")
+
+A subscription detail page presents usage in multiple formats:
+
+* Orb's real time usage graphs show quantities split by day for each billable metric connected to the subscription. This view always displays fresh results on the basis of all events that have been ingested by the system. If your subscription's plan charges for compute and storage costs, you will be presented a separate daily graph for both metrics. These graphs also allow you to view historical usage up to 90 days in the past, and compare trends with the previous billing cycle.
+* The invoice preview shows the upcoming invoice resource for this billing period, with details on fixed fees, usage quantities, and the total amount for each line item. When working with a prepaid plan, the invoice preview will also show deductions to the balance over the current billing period.
+* Historical invoices show finalized invoice PDFs. Invoice PDFs contain a breakdown of all line items along with billing metadata, tax information. Note that once an invoice PDF is finalized, its amounts are frozen. For auditing reasons, Orb will not dynamically regenerate a finalized invoice.
+
+![view_subscription_usage.png](/images/guides/product-catalog/view-usage-560f9b075f801ef51f695b4c458aef23.png)
+
+## Programatically receiving usage[](#programatically-receiving-usage "Direct link to heading")
+
+Orb's [view subscription usage endpoint](/reference/fetch-subscription-usage) enables you to retrieve usage over time in a structured format. This API is quite flexible, allowing you to optionally group usage for a metric by an event property (e.g. to view compute per region), query over custom time ranges, and to window usage.
+
+Retrieving usage can be especially useful to power in-product visibility for your end customers. Giving your customers the ability to understand their utilization in real time can significantly reduce your customer support volume due to surprising invoices with high utilization amounts or overages.
+
+info
+
+#### Embedded usage visualizations[](#embedded-usage-visualizations "Direct link to heading")
+
+Pre-built interactive usage elements which can directly be placed in your front-end application are on our team's near term roadmap. Reach out for more information on these capabilities.
+
+## Usage-based triggers[](#usage-based-triggers "Direct link to heading")
+
+In order to automatically action based on usage trends, Orb provides [webhooks](/guides/integrations-and-exports/webhooks) and natively supported workflows such as automatic top-ups for prepaid plans.

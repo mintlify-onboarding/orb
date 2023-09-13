@@ -1,0 +1,79 @@
+---
+title: "Automate revenue recognition"
+---
+
+Orb offers revenue recognition reports that are compliant with ASC 606 revenue recognition rules, which are a critical financial component for mature businesses. Because Orb acts as a business' source of truth for billing as well as invoicing, credit notes, and payment status, Orb can provide detailed reporting that allows finance teams a clear picture of business performance.
+
+Revenue reports are available in the Reports tab in the Orb webapp and refreshed automatically. In addition to downloadable reports, Orb also offers an in-product revenue recognition waterfall.
+
+To learn more about how Orb can integrate directly with your accounting system, see the [accounting integrations guide](/guides/integrations-and-exports/accounting).
+
+## Revenue recognition method[](#revenue-recognition-method "Direct link to heading")
+
+Orb's revenue recognition system follows the principle that revenue should be recognized when it is earned, not when it is billed (also knows as accrual based accounting). This means that revenue is recognized when the service is provided, not when the invoice is issued. This is particularly important when your billing contains components of usage, because revenue recognition must operate on a daily basis, even on mid-period invoices that have yet to be issued. This methodology is the most common revenue recognition method, and is compliant with ASC 606.
+
+info
+
+Note that revenue recognition rules may vary depending on the size, complexity, and specific accounting considerations for your business. Orb provides both the intelligent defaults as well as the raw breakdowns for you to exercise your own revenue recognition method.
+
+## Revenue recognition waterfall[](#revenue-recognition-waterfall "Direct link to heading")
+
+Orb's in-product revenue recognition waterfall allows you to trace how revenue booked in a certain period was recognized over time. Since this waterfall is refreshed on a daily basis, you should expect the cells for the current recognition and booking period to update as the period progresses.
+
+![revenue-waterfall](/images/guides/revenue-reporting/revenue-waterfall-ce1e214387b66ae86b8fc182f9413aed.png)
+
+## Recognized revenue breakdown[](#recognized-revenue-breakdown "Direct link to heading")
+
+In each period, Orb provides a recognized revenue breakdown detailing the _source_ of recognition.
+
+## Prepurchase revenue[](#prepurchase-revenue "Direct link to heading")
+
+Orb's [prepurchase](/guides/product-catalog/prepurchase) ledger allows you to load in a balance for a customer that rolls over across billing periods and potentially expires at a pre-determined date. Since Orb deducts from prepurchase balance in real-time as events as processed, prepurchase revenue must also be recognized on a daily basis.
+
+Note that the **cost basis** is an important concept for prepurchase revenue. When prepurchase credits are loaded into Orb, the **cost basis** determines the "real" currency value of the prepurchase. For example, if each customer is first allocated 400 credits at a $0 cost basis, this will have no impact on their revenue recognition. For the same customer, credits utilized at a $0.80/unit cost basis should be recognized differently than those granted at a $1.00/unit cost basis. Orb's revenue reporting will always use the cost basis for the purposes of prepurchase deferrals and recognition.
+
+When dealing with prepurchase, certain scenarios require voiding or adjusting existing booked, or recognized revenue. Orb supports these with the ability to void credits up to the block's starting balance. Voided credits can be accounted for as voids or refunds depending on the use-case and result in a reduction of booked revenue _at the time of voiding_. If any of the credits have already been recognized ("used up"), Orb will undo the recognition in the current accounting period as well.
+
+| Revenue source | Description                                                                                                                                                                                                                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deductions     | Revenue recognized as a result of _deducting_ from a customer's prepurchase balance. Note that all prepurchase revenue starts out as deferred revenue, and then is recognized on a daily basis as it's deducted from the prepurchase balance.                                               |
+| Expirations    | Revenue recognized as a result of a customer's prepurchase balance expiring. Since prepurchase revenue is built on blocks, and some prepurchase may have already been previously deducted, this represents the remaining balance of prepurchase that has not yet been deducted and expires. |
+| Voids          | Revenue reversal as a result of voiding/refunding from a customer's prepurchase balance. This represents the total revenue that was reversed from either booked or recognized revenue as a result of voiding a credit block increment. This value is always negative or zero.               |
+
+## Usage revenue[](#usage-revenue "Direct link to heading")
+
+As usage events are sent into Orb, they're associated with active customer subscriptions and their revenue impact can be immediately seen on the subscription's draft invoice. The table below provides a breakdown of the different source of usage revenue, but Orb's reports also let you split by item, giving you a detailed understanding of how each product you sell contributes to your business.
+
+| Revenue source | Description                                                                                                                                           |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Billed         | The subset of usage revenue recognized in the period that has already been billed, or invoiced. This will not include any revenue on draft invoices.  |
+| Unbilled       | The subset of usage revenue recognized in the period that has not yet been billed, or invoiced. This will not include any revenue on issued invoices. |
+
+## Fixed-fee revenue[](#fixed-fee-revenue "Direct link to heading")
+
+Orb uses a straight line methodology for fixed-fees. In particular, Orb will recognize revenue prorated to a per-day basis in the billing period. For example, if a customer is billed $1000 per month in a 31 day month, then each day will be associated with $32.26 of revenue. Note that the relevant period for the fixed fee is based on the _line item service dates_, so both in-advance and in-arrears fixed fees are recognized over the course of their service periods and never at a single point in time.
+
+| Revenue source       | Description                                                                                                                                                                                                                                                                 |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Billed, In-arrears   | Revenue recognized as a result of in-arrears fixed-fees that have already been invoiced. For example, this will include line items for fixed-fees in previous months.                                                                                                       |
+| Unbilled, In-arrears | Revenue recognized for fixed fees that are on a draft invoice and yet to be billed. Note that these fees are accrued on a daily basis until the invoice is issued, at which point they move out of this category and into the "Billed, In-arrears" category.                |
+| Billed, In-advance   | Revenue recognized as a result of in-advance fixed-fees that have already been invoiced. For example, it's common to bill for a monthly platform fee at the beginning of the month. In this case, revenue must be recognized on a daily basis over the course of the month. |
+
+## Minimums and discounts[](#minimums-and-discounts "Direct link to heading")
+
+Orb supports minimums on a per-line item and per invoice basis. The _applicable amount_ for a minimum will vary on a per-period basis, depending on the relevant set of accrued usage: for example, a $500 minimum might have no effect for an invoice with $600 of usage charges, whereas it might have a $100 effect for an invoice with $400 of usage charges.
+
+From a business perspective, it's important for you to be able to differentiate revenue that is a result of usage as opposed to a minimum "top-up", so Orb will never immediately recognize the revenue from the minimum without a complete picture of the usage on the invoice, thereby allowing the system to determine the applicable minimum amount. In Orb's reports, minimums are added _when an invoice is issued_, but they are still recognized over the relevant service period. This means that invoice minimums may impact previous accounting periods, and will be attributed as such in the report.
+
+If an invoice is issued on May 15 and contains a line item with a minimum spanning April 15 - May 15, the May 16 report will show the _applicable_ minimum straight-line recognized over the period April 15 - May 15.
+
+The same behavior applies to discounts. When there is a discount on an invoice, the discount is recognized over the relevant service period, but only when the invoice is issued. Discounts which impact previous accounting periods will be attributed as such in the report.
+
+## Voids and credit notes[](#voids-and-credit-notes "Direct link to heading")
+
+When an invoice is voided or a credit note is created against an invoice, recognized revenue is decreased corresponding to the service dates of the line items if required. Orb specifically identifies the revenue period that has already been recognized to perform this reversal. 
+
+| Scenario                                                                                      | Action                                                                                                 | Revenue impact                                                                                                                                                                                                                                 |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Invoice with annual in-advance fixed fee issued, with service dates 01-01-2023 to 01-01-2024. | Subscription cancelled on 03-01-2023, causing a credit note to be issued against the original invoice. | Orb stops recognizing revenue on a daily basis for the subscription, but revenue that has been recognized up to the beginning of March remains. Deferred revenue is cleared for the subscription, since no further revenue will be recognized. |
+| Usage invoice issued on 04-15-2023, with in-arrears usage spanning 03-15-2023 \- 04-15-2023.  | Usage invoice manualy voided on 04-15-2023.                                                            | Orb decreases recognized revenue in both the March and April accounting periods, splitting appropriately based on incurred usage in the relevant months.                                                                                       |

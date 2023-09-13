@@ -1,0 +1,129 @@
+---
+title: "Ingest an Event"
+---
+
+## What’s in an event?[](#whats-in-an-event "Direct link to heading")
+
+An event is a primitive in Orb and is the basis for any usage-based pricing in your strategy. [Unlike subscription billing providers](https://www.withorb.com/blog/metered-billing-vs-usage-based-billing-what-are-the-key-differences) which provide metered billing, usage reporting in Orb isn’t simply a single aggregate value that the system consumes periodically and multiplies with a price amount.
+
+Orb's events model makes it easy to send in a raw stream of data, and allows you to construct queries on that stream in the product. Not only is sending in a set of raw events less upfront work for you and your team, it avoids re-integration when your billing strategy changes.
+
+<Tip>
+  Think of events as the rows in a database table. Once you've ingested events, you configure queries ("billable metrics") over those rows, which are automatically materialized by Orb as new events stream in. Customers typically send hundreds or thousands of events a minute to Orb, which prevents your team from maintaining expensive aggregation data infrastructure.
+</Tip>
+
+You'll want to put thought into designing your events, but let's get a couple events into the platform right away.
+
+## Ingesting your first event[](#ingesting-your-first-event "Direct link to heading")
+
+To get the ball rolling, we'll use Orb's batch events API to ingest two example events. First, we’ll need an API key so Orb can ingest events into your account. Orb’s API uses `Bearer` or Token authentication. To start, ensure that you're in Test Mode and generate an API key for testing by going to the Orb webapp > Organization Settings > Create new API key.
+
+Even though you haven't set up any customers in Orb just yet, we can still start sending in some events.
+
+Events in Orb must be tagged with a timestamp, so let's first get the current time as an ISO 8601 string. In your terminal, run:
+
+```
+date -u +"%Y-%m-%dT%H:%M:%SZ"
+
+```
+
+This should return something like `2023-02-20T00:00:00Z`, which is an ISO formatted current timestamp. Copy this value so we can use it in the next step.
+
+Paste the following cURL command into your terminal, replacing the `<TOKEN>` with your copied API token and `<TIMESTAMP>` with the timestamp you just generated.
+
+```bash
+curl --location --request POST 'https://api.withorb.com/v1/ingest?debug=true' \
+--header 'Authorization: Bearer <TOKEN>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "events": [
+        {
+            "idempotency_key": "ingesting-events-guide-1",
+            "external_customer_id": "demo_customer",
+            "event_name": "function_compute",
+            "properties": {
+                "app_id": "DO1X6mLzDPa7",
+                "execution_ms": 55737,
+                "function_id": "hLvenfMutA5j",
+                "provisioned_memory_gb": 8
+            },
+            "timestamp": "<TIMESTAMP>"
+        },
+        {
+            "idempotency_key": "ingesting-events-guide-2",
+            "external_customer_id": "demo_customer",
+            "event_name": "function_compute",
+            "properties": {
+                "app_id": "aMwoQ3ldnJXA",
+                "execution_ms": 23647,
+                "function_id": "g6OidvuWCvT8",
+                "provisioned_memory_gb": 8
+            },
+            "timestamp": "<TIMESTAMP>"
+        }
+    ]}'
+
+```
+
+As response, you’ll see:
+
+```json
+{
+  "debug": {
+    "duplicate": [],
+    "ingested": ["ingesting-events-guide-1", "ingesting-events-guide-2"]
+  },
+  "validation_failed": []
+}
+
+```
+
+As that response suggests, we've ingested in two events (which are identified by their idempotency keys) and there were no errors.
+
+To see this in the Orb platform, head over to the ["Events" tab](https://app.withorb.com/events?time%5Frange=last%5F4h&page=1) in your test mode account in Orb and take a look. You should see rows in the table that correspond to these two events. If you click in for more details, you'll see a timeline of what processing Orb has done on these events— for now, they don't match any real customers in the platform so you'll just see that they've been ingested at the relevant timestamp.
+
+![Events tab](/images/guides/quickstart/events-tab-timeline-0a09936da02482fd02df686b7dbe0885.png)
+
+Before we move on, let's just run that same cURL command one more time to see what happens! With this second run, you'll see:
+
+```json
+{
+  "debug": {
+    "duplicate": ["ingesting-events-guide-1", "ingesting-events-guide-2"],
+    "ingested": []
+  },
+  "validation_failed": []
+}
+
+```
+
+Orb doesn't throw any validation errors, but it does indicate that the events have already been ingested — this idempotency property is a very important part of building a billing events pipeline. You want to make sure you never double count the same usage! We'll dive deeper into this in the sections below.
+
+## The event schema[](#the-event-schema "Direct link to heading")
+
+As you can tell from our example above, you don't need to do any setup to start sending in events. Orb doesn't require you to declare your event schema upfront or have your event body conform to a specific shape.
+
+Only the following restrictions apply:
+
+* Each event must contain a few first-class fields, including an `idempotency_key` (for deduplication), a customer identifier (for attribution), and a timestamp (to assign the event to an appropriate billing period).
+* Events also have a schema-less dictionary of key/value pairs. These key/value pairs must be primitives without any nesting allowed, but can be numbers, strings, or booleans.
+
+<Note>
+  An **idempotency key** helps Orb determine which events are conceptually duplicates and should not be ingested multiple times — after all, in normal use, you may have lots of events that look exactly the same to Orb but you do want to count them multiple times!
+
+  Idempotency keys should therefore be unique to the 'occurence' or the action in your product. For example, if every transaction in your system has a corresponding UUID, you can use that UUID as the idempotency key. If you're ingesting events from a database, you can use the primary key of the table as the idempotency key.
+</Note>
+
+## Types of events[](#types-of-events "Direct link to heading")
+
+Typically, events map to one of the following:
+
+1. User action: When a user triggers an action in your application, you may want to send an event to capture a record of it. Depending on your use case, this might capture a user login, file download, triggered verification, or a refreshed dashboard.
+2. Background task: In many cases, a user action will trigger an asynchronous task that executes in the background. For example, you might log an event every time a job finishes, an image is processed, or a model is trained.
+3. Regular heartbeat: Especially if you’re an infrastructure provider, you may want to send an event over a regular time interval that indicates that a resource is active, alongside any metadata over that timeframe.
+
+## Productionizing your events pipeline[](#productionizing-your-events-pipeline "Direct link to heading")
+
+Orb offers plenty of different ways to send in data, ranging from the direct API integration to solutions that involve regular exports from your existing data warehouse via a durable message bus like S3.
+
+To learn in more detail about these approaches and dive into event ingestion, check out the [ingestion guide](/guides/events-and-metrics/event-ingestion).

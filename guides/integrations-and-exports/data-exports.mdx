@@ -1,0 +1,30 @@
+---
+title: "Data exports"
+---
+
+Orb supports regular syncs of resources to your destination of your choice. Typically, this is a data warehouse such as Snowflake/Redshift, but in some cases it may be desirable to sync resources to a cloud storage bucket for more flexibility.
+
+## Export method[](#export-method "Direct link to heading")
+
+Orb's data exports can either be self-hosted or managed by Orb:
+
+* If you already have an existing [Fivetran](https://www.fivetran.com/) setup, the Orb team can set up a [custom data connector or function](https://fivetran.com/docs/functions) onto a serverless stack such as AWS Lambda or Google Cloud Functions in order to run the sync.
+* Orb maintains an [Airbyte connector](https://docs.airbyte.com/integrations/sources/orb/) that supports both full refresh and incremental syncs. You can run this connector on self-hosted Airbyte, or Airbyte cloud.
+* If you provide Orb access to your destination of choice, Orb can also run a fully hosted sync to this destination with a default nightly cadence.
+
+tip
+
+**Incremental sync behavior:**For nearly all resources, Orb provides an _incremental_ sync, which significantly reduces the data that's synced on a regular basis. While the first sync you run on your account may transfer a large number of resources, future syncs will capture only updates to these resources. 
+
+### Resources exported[](#resources-exported "Direct link to heading")
+
+The table below provides an overview of the supported resources, the schema, and any notes on their sync behavior:
+
+| Resource             | Notes                                                                                                                                                          | Schema                                                                                                                                   |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Subscription         | [Subscription resource](/guides/concepts#Subscription)                                                                                                         | This mirrors the schema returned by the [Fetch subscription](/reference/fetch-subscription) endpoint.                                    |
+| Subscription version | This captures the [subscription schedule](/reference/fetch-subscription-schedule) of a subscription, specifically allowing you to understand plan transitions. | A JSON object with the following keys: start\_date, ended\_at, plan, subscription\_id subscription\_start\_date, subscription\_ended\_at |
+| Invoice              | Orb syncs issued [invoices](/guides/concepts#Invoice) as well as constantly refreshes draft invoices.                                                          | This mirrors the schema returned by the [Fetch invoice](/reference/fetch-invoice) endpoint.                                              |
+| Customer             | [Customer resource](/guides/concepts#Invoice)                                                                                                                  | This mirrors the schema returned by the [Fetch customer](/reference/fetch-customer) endpoint.                                            |
+| Credit ledger entry  | Orb syncs all committed (i.e. non-pending) prepurchase ledger entries.                                                                                         | This mirrors the schema returned by the [Fetch credits ledger](/reference/fetch-customer-credits-ledger) endpoint.                       |
+| Subscription costs   | Orb syncs daily costs for a subscription, provided that the day is before the grace period (in order to make sure that the costs are stable).                  | This mirrors the schema returned by the [Fetch subscription costs](/reference/fetch-subscription-costs) endpoint.                        |

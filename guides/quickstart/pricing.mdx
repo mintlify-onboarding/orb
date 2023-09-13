@@ -1,0 +1,103 @@
+---
+title: "Configure your price"
+---
+
+## Overview[](#overview "Direct link to heading")
+
+Let's start tying our data to billing in Orb! We'll assume you've already set up the very simple count metric as detailed in [the prior guide](/guides/quickstart/metrics). In this guide, we’ll set up a couple different plans to illustrate the basics of the plan creation flow in Orb.
+
+## Setting up your first plan[](#setting-up-your-first-plan "Direct link to heading")
+
+A plan is a collection of pricing information that describes how you want to bill your customers for your product. Often times, a plan corresponds to what you've listed on your pricing page, but it can also be used to model enterprise agreements.
+
+To get started, let’s create a very simple plan that simply bills your customer monthly at a rate of $3.00 per event, using the "Count all events" billable metric we created in the [metrics guide](/guides/quickstart/metrics).
+
+1. Navigate to the plan creation page by clicking "Plans" in the left sidebar, and then clicking "+ New Plan" in the top right.
+2. Click "+ Add usage-based price", which will add a new price configuration card to the screen to the page.
+3. Select the "Count all events" billable metric and specify the "Per unit" rate to be 3.00 USD.
+4. Click "Next" and name your plan "Basic" and click "Publish"
+
+That’s it! You should see the newly published plan in the plans tab of the Orb dashboard. If you'd like to jump ahead to testing this plan, feel free to skip to the [subscriptions guide](/guides/quickstart/subscriptions) to see it in action.
+
+## Expanding the pricing model[](#expanding-the-pricing-model "Direct link to heading")
+
+The "Basic" plan is a little expensive, and it doesn't always make sense to be billing $3.00 for every single event we ingest for our customers. Let's suppose we've also added multi-region support in our product, and we want to change the price per region because some regions cost much more to maintain than others. To handle this, we’ve added a `region` property to the events we send in to Orb, and we’ll use this to model our new pricing scheme.
+
+Ingesting new events with a region property 
+
+ To ingest a few new events specifying a `region` property, you can use a very similar command to the one we used in the [ingestion guide](/guides/quickstart/ingest), but with a few changes. As before, fill in the `timestamp` and `TOKEN` fields with the appropriate values.
+
+```
+curl --location --request POST 'https://api.withorb.com/v1/ingest?debug=true' \
+--header 'Authorization: Bearer <TOKEN>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "events": [
+        {
+            "idempotency_key": "create-plan-guide-1",
+            "external_customer_id": "demo_customer",
+            "event_name": "function_compute",
+            "properties": {
+                "app_id": "DO1X6mLzDPa7",
+                "execution_ms": 55737,
+                "function_id": "hLvenfMutA5j",
+                "provisioned_memory_gb": 8,
+                "region": "us-east-1"
+            },
+            "timestamp": "<TIMESTAMP>"
+        },
+        {
+            "idempotency_key": "create-plan-guide-2",
+            "external_customer_id": "demo_customer",
+            "event_name": "function_compute",
+            "properties": {
+                "app_id": "aMwoQ3ldnJXA",
+                "execution_ms": 23647,
+                "function_id": "g6OidvuWCvT8",
+                "provisioned_memory_gb": 8,
+                "region": "us-west-1"
+            },
+            "timestamp": "<TIMESTAMP>"
+        }
+    ]}'
+
+```
+
+We’ll want to offer our customers on this plan a 15% discount on event ingestion on the following per-region list rates:
+
+| Region    | Price per event |
+| --------- | --------------- |
+| us-east-1 | $0.75           |
+| us-west-1 | $0.85           |
+| us-west-2 | $0.90           |
+| eu-west-1 | $0.95           |
+| Default   | $0.80           |
+
+Note here that we're handling the addition of a new region to our product with a catch-all rate instead of having to make changes to this plan in the future. In Orb, this pricing scheme can be represented as a **Matrix price**, which allows us to create a price table without the cumbersome task of defining multiple metrics. You can think of matrix pricing as applying a `GROUP BY` operator to the billable metric. In this case, we’ll add one grouping, "region" and we’ll set the price per dimension to the values mentioned above alongside the discount.
+
+We’d also like to start charging a $1000 platform fee that is paid in-advance, which means our customers will pay for this fee for the upcoming month in every cycle. In Orb, we call this a fixed fee, which can be configured to bill in-advance or in-arrears.
+
+tip
+
+Although we're configuring a specific price point here in the plan definition, Orb allows adding overrides for a customer when creating a subscription. This allows you to offer discounts or special terms to specific customers while still maintaining a single plan definition and keeping your product catalog simple.
+
+Let's go ahead and model this in our Orb test mode environment. As before, navigate to the plan creation page and take the following steps:
+
+1. Click "+ Add usage-based price" on the top right to add a new price configuration card. Select the "Count all events" billable metric. Although we're going to be reflecting our new price model, note that we can still reuse the same billable metric for this plan.
+2. For the price model, select "Matrix pricing". Select "Configure matrix model" and specify "region" for the first dimension. Orb will automatically populate region labels you've sent in the past, but we can also add new ones here. We’ll add the following regions:  
+   * us-east-1  
+   * us-west-1  
+   * us-west-2  
+   * eu-west-1
+3. You should see a table that looks very similar to the one we wrote above! We can go ahead and populate the Unit price by region into this table. Below the table, set the "Default unit price" as $0.80.
+4. As a final step for this price, add the 15% discount. Check "Include price discounts" from the "Price add-ons" section of this configuration screen to do so.
+5. Add the platform fee by clicking the dropdown arrow on the top right and selecting "Add fixed-fee price". Add an item named "Platform access fee" with a per-unit price of $1000.00
+6. Click "Next" and name your plan "Basic (Regional)" and click "Publish".
+
+![](/images/guides/quickstart/basic_regional-b8c65b717db160a9f4e0bba83e874ed5.png)
+
+## Additional pricing models[](#additional-pricing-models "Direct link to heading")
+
+Matrix pricing and unit pricing are just two basic models that Orb supports out of the box. For a complete tour of the pricing levers available in the plaform, check out the full guide on [managing your product catalog](/guides/product-catalog/build-catalog).
+
+Let's start using these plans to setup subscriptions for our customers!

@@ -1,0 +1,63 @@
+---
+title: "Construct usage metrics"
+---
+
+To get started with creating your first usage metric, check out the [quickstart guide](/guides/quickstart/metrics).
+
+## Usage-based billing[](#usage-based-billing "Direct link to heading")
+
+Unlike subscription billing providers which provide metered billing, usage reporting in Orb isn’t simply a single aggregate value that the system consumes periodically and multiplies with a price amount.
+
+Instead, Orb uses a fundamentally different paradigm of to support usage-based billing on events, where usage is calculated based on a query over raw events emitted into Orb. How you calculate billable usage is separate from what events are emitted by your system, giving you the flexibility to structure your event stream the way you see fit.
+
+This model guarantees **auditability** and **accuracy** down to _every usage event_. Orb transforms billing from a once a month “billing run” to a real-time process, giving you an unmatched level of flexibility and the ability to time travel and see how usage grows over time.
+
+## Billable metrics[](#billable-metrics "Direct link to heading")
+
+A billable metric is defined by the query that transforms raw usage events into meaningful values for your customers. For example, the following concepts would be ideal billable metrics in Orb:
+
+1. Transaction volume (USD)
+2. Milliseconds of function compute in `us-east-1`
+3. Monthly active users
+4. Storage (GB-hr)
+
+Orb's billable metrics are designed to track usage, instead of the resultant amount to charge. For example, if your service costs $3 per API call, best practices would be for your billable metric to simply aggregate API calls, and not multiply by $3\. Pricing information is better represented by the [price](/guides/concepts#plan-and-price) object.
+
+Billable metrics are always evaluated on a per-customer basis.
+
+## Composing a metric[](#composing-a-metric "Direct link to heading")
+
+A billable metric consists of event filters as well as an aggregation clause.
+
+Event filters determine which events should affect the metric, and these filters are based on the properties of each individual event. Note that during ingestion, `properties` is a dictionary of primitive key-value pairs, and any property of the event can be used when defining your metric.
+
+Suppose we take processed transaction volume as an example of a metric, where your reported events represent each transaction along with its status and the payment method that was used:
+
+```
+  {
+    "event_name": "transaction_processed",
+    "external_customer_id": "fintech_inc",
+    "properties": {
+      "capture_status": "pending",
+      "payment_method": "ach",
+      "amount_cents": 4592.19
+      "currency": "usd"
+    }
+  }
+
+```
+
+To calculate processed transaction volume, you could configure your metric with the matching filters on `event_name`, `capture_status`, and perhaps `payment_method`.
+
+```
+    event_name = `transaction_processed` AND
+    capture_status = `success` AND
+    (payment_method = `card` OR payment_method = `direct_debit`)
+
+```
+
+Your metric also needs to define how to _aggregate_ the total usage from matching events. In this case, that could be a simple `SUM(amount_cents)`. As time progresses, Orb will track this aggregate value for each of your customers separately and automatically update usage dashboards, alerting, and workflows.
+
+## Fully flexible metrics using SQL[](#fully-flexible-metrics-using-sql "Direct link to heading")
+
+See the [advanced metrics](/guides/extensibility/advanced-metrics) guide for more information on how to use SQL to create fully flexible metrics.

@@ -1,0 +1,59 @@
+---
+title: "Subscribe a customer"
+---
+
+## Creating a new customer[](#creating-a-new-customer "Direct link to heading")
+
+In the quickstart so far, you've already [ingested some events](/guides/quickstart/ingest) into Orb and [created a plan](/guides/quickstart/pricing). Now, let's create a customer, so we can subscribe them to our plan.
+
+tip
+
+You'll notice that in the events we've ingested so far, we've been tagging them with `external_customer_id = demo_customer`. This `external_customer_id` is effectively an alias for an Orb customer that doesn't exist yet. Let's go ahead and create the corresponding customer through the Orb UI now.
+
+In your Orb test mode environment, navigate to the [Customer list](https://app.withorb.com/customers) and click the action to add a new customer. Fill in the form with some sample customer information, and set the `external_customer_id` to `demo_customer`. Keep the default Invoice method (we'll revisit what this means in the next guide) and set the Time zone to UTC.
+
+![](/images/guides/quickstart/create_customer-ce9a3c608e47acbd1d93bfedd5271b71.png)
+
+## Provisioning the subscription[](#provisioning-the-subscription "Direct link to heading")
+
+From the customer page for Bruce Wayne Enterprises, let's click "Add subscription", which will send us into the creation flow. Select the "Basic (Regional)" plan we created in the [plans](/guides/quickstart/pricing) guide for this example.
+
+Select a start date for the subscription of today to reflect that their subscription should start immediately. Let's also keep the default selection of "Align billing with the 1st of the month" which means that every billing period boundary other than the first will fall on the 1st. This is a common choice for SaaS businesses, but you can also choose to align billing with the start date of the subscription so you can bill on every 22nd of the month if the subscription starts on the 22nd.
+
+info
+
+Aligning billing to the first of the month will cause any in-advance fees to be prorated according to the length of the resulting first period. For example, if you're provisioning a subscription on the 15th of the month, the first period will be 15 days long, and you'll charge your customer approximately half of the in-advance fixed fee on their first invoice.
+
+![](/images/guides/quickstart/subscription_start_date-046c88c9538f06eaa9ba1690df602821.png)
+
+While this customer is subscribed to our base plan, we’ve negotiated some custom terms with them, including a change to the amount of their in-advance fixed fee. Click the "Override” button next to the accompanying price and change the value from $1,000 to $750\. This is where you'll specify any custom negotiated discounts, minimums, and other changes to the price for this customer.
+
+![](/images/guides/quickstart/override_fixed_fee-362ba90f3c08c2d50918675affc7a4f2.png)
+
+We can click next to continue forward to the Review step. This page gives us an overview of the plan to which we’re going to subscribe this customer, along with any overrides to particular plan prices. Importantly, it also provides a preview of the first invoice we'll send this customer.
+
+![](/images/guides/quickstart/subscription_review-ddd209467c9d02c0af584d85dbb7e91a.png)
+
+Depending on when you're creating your subscription, your total will vary according to the prorated amount of the in-advance fixed fee. Proceed to create the subscription with the "Create” button! Since this subscription has an in-advance fixed fee, you'll see an immediate invoice generated for this customer.
+
+Once you're back on the customer page, you should see the newly active subscription. Note that by default, the Orb dashboard creates the subscription as of the _beginning_ of the current day, so you may already see some usage from previously ingested events.
+
+![](/images/guides/quickstart/active_subscription-4e72abd76fca44260ab31541f2d9d049.png)
+
+In the Invoices section further down the page, we can see two invoices: one that was "issued” from the in-advance fee and the one that is in "draft” and set to be issued on the 1st of the following month, as configured.
+
+Click to view the already-issued invoice in this table.
+
+![](/images/guides/quickstart/invoice_history-3df99464de9d18a4e5293d5449ed6775.png)
+
+On this invoice page, we can see that the initial invoice is charging the customer for the in-advance fixed fee. Since the billing alignment is for the first and our subscription began on the 10th, the service period we are charging this customer for is from the 10th to the 1st of the next month. Therefore, the fee is prorated for the shortened service period.
+
+![](/images/guides/quickstart/first_invoice-60541ab6ba4fb399170d3438c759395b.png)
+
+Let’s go back and view the "draft” invoice. We can also view the draft invoice from the subscription card at the top by clicking on the date under "Next invoice”.
+
+![](/images/guides/quickstart/upcoming_invoice-db2e21e56d938d3cbff4a8c67c84aab2.png)
+
+This invoice, with an invoice number suffixed with `DRAFT`, is for the _current_ billing period, and contains both the in-arrears usage charges and the in-advance fixed fee for the following month. Note that it's scheduled to issue on the first of the following month. This draft invoice will automatically be updated as new usage is ingested into Orb.
+
+In the next step of this quickstart, we'll dive deeper into how we can prepare these invoices for our customers, and start to charge them through a payments integration.
