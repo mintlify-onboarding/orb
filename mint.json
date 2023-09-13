@@ -10,6 +10,9 @@
       "light": "#9A75FF",
       "dark": "#7e57e8"
     },
+    "modeToggle": {
+      "default": "dark"
+    },
     "topbarCtaButton": {
       "name": "Login",
       "url": "https://app.withorb.com/"
